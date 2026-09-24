@@ -1,0 +1,16 @@
+# Macroly AI Nutrition Tracker - Production & Development Dependencies
+
+# Web Framework & Server
+fastapi>=0.115.0
+uvicorn[standard]>=0.30.0
+
+# Data Models & Settings
+pydantic>=2.10.0
+python-dotenv>=1.0.1
+
+# Database Drivers
+psycopg2-binary>=2.9.10
+
+# External API & AI Integration
+requests>=2.32.0
+groq>=0.11.0

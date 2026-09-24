@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Macroly - AI Nutrition & Macro Tracker</title>
+  <meta name="description"
+    content="Conversational AI-powered calorie and macro tracking application. Chat to log meals and track nutrition in real time.">
+  <link rel="stylesheet" href="/static/css/styles.css?v=3.2">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+
+<body>
+  <svg width="0" height="0" style="position: absolute;">
+    <defs>
+      <linearGradient id="emeraldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#34d399" />
+        <stop offset="100%" stop-color="#059669" />
+      </linearGradient>
+      <linearGradient id="proteinGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#34d399" />
+        <stop offset="100%" stop-color="#10b981" />
+      </linearGradient>
+      <linearGradient id="carbsGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#fbbf24" />
+        <stop offset="100%" stop-color="#f59e0b" />
+      </linearGradient>
+      <linearGradient id="fatsGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#60a5fa" />
+        <stop offset="100%" stop-color="#3b82f6" />
+      </linearGradient>
+    </defs>
+  </svg>
+
+  <div class="device-container" id="app">
+    <header class="app-header">
+      <div class="brand-section">
+        <div class="brand-logo-circle">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+            stroke-linejoin="round">
+            <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8z" opacity="0.3" />
+            <path d="M12 2a10 10 0 0 1 10 10" />
+            <circle cx="12" cy="12" r="3" />
+          </svg>
+        </div>
+        <div class="brand-titles">
+          <span class="brand-tag">MACROLY TRACKER</span>
+          <span class="brand-screen-name" id="currentScreenTitle">Ai Nutrition Logger</span>
+        </div>
+      </div>
+      <div class="header-user-avatar" id="avatarBtn" title="Elena's Profile">
+        <img src="/static/assets/avatar.jpg" alt="Elena">
+      </div>
+    </header>
+
+    <!-- Main Scrollable Screen Content -->
+    <main class="screen-content">
+
+      <!-- ================= 1. DASHBOARD VIEW ================= -->
+      <section class="screen-view" id="dashboardView">
+        <div class="greeting-section">
+          <div class="greeting-text">
+            <h1 id="userGreeting">Good morning,<br>Elena 👋</h1>
+            <div class="greeting-date" id="dateSubtitle">THURSDAY, OCT 24</div>
+          </div>
+          <div class="date-pill-selector">
+            <span>&lt;</span>
+            <span>Today</span>
+            <span>&gt;</span>
+          </div>
+        </div>
+
+        <!-- Big Calorie Gauge Card -->
+        <div class="calorie-gauge-card">
+          <div class="gauge-svg-container">
+            <svg class="gauge-svg" viewBox="0 0 160 160">
+              <circle class="gauge-bg-track" cx="80" cy="80" r="64" />
+              <circle class="gauge-progress-bar" id="calorieArc" cx="80" cy="80" r="64" stroke-dasharray="402"
+                stroke-dashoffset="137" />
+            </svg>
+            <div class="gauge-inner-info">
+              <div class="gauge-label">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                  <path
+                    d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 14h-2v-2h2v2zm0-4h-2V7h2v5z" />
+                </svg>
+                CALORIES
+              </div>
+              <div class="gauge-number" id="calsConsumedVal">1,450</div>
+              <div class="gauge-target-text">of <span id="calsTargetVal">2,200</span> kcal</div>
+              <div class="gauge-left-pill" id="calsLeftPill">750 kcal left</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3 Macro Cards Row -->
+        <div class="macro-cards-row">
+          <!-- Protein -->
+          <div class="macro-mini-card">
+            <svg class="mini-ring-svg" viewBox="0 0 40 40">
+              <circle class="mini-ring-track" cx="20" cy="20" r="16" />
+              <circle class="mini-ring-progress" id="proteinRing" cx="20" cy="20" r="16" stroke="url(#proteinGrad)"
+                stroke-dasharray="100.5" stroke-dashoffset="22" />
+            </svg>
+            <span class="macro-name">Protein</span>
+            <span class="macro-values"><span id="pVal">110</span><span class="macro-target-dim">/<span
+                  id="pTarget">140</span>g</span></span>
+            <span class="macro-percent-tag" id="pPct">78%</span>
+          </div>
+
+          <!-- Carbs -->
+          <div class="macro-mini-card">
+            <svg class="mini-ring-svg" viewBox="0 0 40 40">
+              <circle class="mini-ring-track" cx="20" cy="20" r="16" />
+              <circle class="mini-ring-progress" id="carbsRing" cx="20" cy="20" r="16" stroke="url(#carbsGrad)"
+                stroke-dasharray="100.5" stroke-dashoffset="25" />
+            </svg>
+            <span class="macro-name">Carbs</span>
+            <span class="macro-values"><span id="cVal">165</span><span class="macro-target-dim">/<span
+                  id="cTarget">220</span>g</span></span>
+            <span class="macro-percent-tag" id="cPct">75%</span>
+          </div>
+
+          <!-- Fats -->
+          <div class="macro-mini-card">
+            <svg class="mini-ring-svg" viewBox="0 0 40 40">
+              <circle class="mini-ring-track" cx="20" cy="20" r="16" />
+              <circle class="mini-ring-progress" id="fatsRing" cx="20" cy="20" r="16" stroke="url(#fatsGrad)"
+                stroke-dasharray="100.5" stroke-dashoffset="36" />
+            </svg>
+            <span class="macro-name">Fats</span>
+            <span class="macro-values"><span id="fVal">42</span><span class="macro-target-dim">/<span
+                  id="fTarget">65</span>g</span></span>
+            <span class="macro-percent-tag" id="fPct">64%</span>
+          </div>
+        </div>
+
+        <div class="vitals-header-row">
+          <span class="vitals-section-title">VITALS & ACTIVITY</span>
+          <span class="vitals-sync-badge">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <path d="M20 6L9 17l-5-5" />
+            </svg>
+            Synced with Apple Health
+          </span>
+        </div>
+
+        <div class="vitals-cards-grid">
+          <!-- Workout -->
+          <div class="vital-pill-card">
+            <div class="vital-icon-box" style="background: var(--accent-workout-bg); color: var(--accent-workout);">
+              🔥
+            </div>
+            <div class="vital-details">
+              <span class="vital-label">WORKOUT</span>
+              <span class="vital-stat-val" id="workoutKcalVal">320 <span class="vital-sub-val">kcal</span></span>
+              <span class="vital-sub-val" id="workoutMinsVal">(45m)</span>
+            </div>
+          </div>
+
+          <!-- Hydration -->
+          <div class="vital-pill-card" id="hydrationCard" style="cursor: pointer;" title="Tap to add water">
+            <div class="vital-icon-box" style="background: var(--accent-fats-bg); color: var(--accent-fats);">
+              💧
+            </div>
+            <div class="vital-details">
+              <span class="vital-label">HYDRATION</span>
+              <span class="vital-stat-val" id="hydrationVal">2.1 <span class="vital-sub-val">/ 3.0 L</span></span>
+              <span class="vital-sub-val" style="color: var(--primary);">+250ml tap</span>
+            </div>
+          </div>
+
+          <!-- Weight -->
+          <div class="vital-pill-card">
+            <div class="vital-icon-box" style="background: var(--accent-protein-bg); color: var(--accent-protein);">
+              ⚖
+            </div>
+            <div class="vital-details">
+              <span class="vital-label">WEIGHT</span>
+              <span class="vital-stat-val" id="weightVal">64.2 <span class="vital-sub-val">kg</span></span>
+              <span class="vital-sub-val">Target 62kg</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Today's Log Section -->
+        <div class="log-section-header">
+          <div class="log-title-wrap">
+            <h2 class="log-main-heading">Today's Log</h2>
+            <span class="log-count-pill" id="mealsCountPill">3 meals</span>
+          </div>
+          <span class="log-view-all-link" id="viewAllLink">View All &rarr;</span>
+        </div>
+
+        <div class="meals-list-stack" id="mealsListContainer">
+          <!-- Meal cards rendered dynamically -->
+        </div>
+
+        <!-- AI Quick Log Box on Dashboard -->
+        <div class="ai-quick-log-card">
+          <div class="ai-quick-header">
+            <div class="ai-quick-title">
+              <svg viewBox="0 0 24 24" fill="currentColor">
+                <path
+                  d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
+              </svg>
+              AI Quick Log
+            </div>
+            <span class="ai-quick-ready-pill">Ready</span>
+          </div>
+          <div class="ai-quick-input-bar">
+            <input type="text" id="dashboardQuickInput" placeholder="e.g., '1 glass iced latte with oat milk'..."
+              autocomplete="off">
+            <button class="quick-mic-btn" id="dashboardMicBtn" title="Speech to text">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
+                <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                <line x1="12" y1="19" x2="12" y2="23" />
+                <line x1="8" y1="23" x2="16" y2="23" />
+              </svg>
+            </button>
+            <button class="quick-send-btn" id="dashboardSendBtn" title="Send">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="19" x2="12" y2="5" />
+                <polyline points="5 12 12 5 19 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= 2. CHAT LOGGER VIEW ================= -->
+      <section class="screen-view" id="chatView">
+        <div class="chat-logger-view">
+          <!-- Assistant Header Card -->
+          <div class="ai-status-banner-card">
+            <div class="banner-top-row">
+              <div class="banner-ai-identity">
+                <div class="banner-icon-disc">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="8" />
+                    <path d="M12 8v8" />
+                    <path d="M8 12h8" />
+                  </svg>
+                </div>
+                <div class="banner-name-block">
+                  <span class="banner-assistant-name">Macroly AI Assistant</span>
+                  <span class="banner-status-live">
+                    <span
+                      style="display:inline-block;width:6px;height:6px;background:var(--primary);border-radius:50%;"></span>
+                    Listening & Parsing
+                  </span>
+                </div>
+              </div>
+              <div class="banner-version-badge">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                  <path
+                    d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
+                </svg>
+                v2.4 Ready
+              </div>
+            </div>
+            <div class="banner-helper-quote">
+              Say or type what you ate, e.g. &ldquo;2 sourdough toasts with peanut butter and a latte&rdquo;
+            </div>
+          </div>
+
+          <!-- Chat Conversation Scroll Stream -->
+          <div class="chat-messages-scroll" id="chatMessagesContainer">
+            <!-- Rendered dynamically -->
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= 3. STATS VIEW ================= -->
+      <section class="screen-view" id="statsView">
+        <div class="greeting-section">
+          <div class="greeting-text">
+            <h1>Weekly Stats &<br>Adherence</h1>
+            <div class="greeting-date">PAST 7 DAYS PERFORMANCE</div>
+          </div>
+        </div>
+
+        <div class="calorie-gauge-card" style="align-items: flex-start;">
+          <h3 style="font-size: 15px; font-weight: 800; margin-bottom: 12px;">Calorie Target Consistency</h3>
+          <div
+            style="display: flex; justify-content: space-between; width: 100%; align-items: flex-end; height: 140px; padding: 10px 0;">
+            <div style="display:flex; flex-direction:column; align-items:center; gap:6px;">
+              <div style="width:24px; height:90px; background:var(--primary); border-radius:6px;"></div>
+              <span style="font-size:11px; font-weight:700; color:var(--text-muted);">M</span>
+            </div>
+            <div style="display:flex; flex-direction:column; align-items:center; gap:6px;">
+              <div style="width:24px; height:110px; background:var(--primary); border-radius:6px;"></div>
+              <span style="font-size:11px; font-weight:700; color:var(--text-muted);">T</span>
+            </div>
+            <div style="display:flex; flex-direction:column; align-items:center; gap:6px;">
+              <div style="width:24px; height:100px; background:var(--primary); border-radius:6px;"></div>
+              <span style="font-size:11px; font-weight:700; color:var(--text-muted);">W</span>
+            </div>
+            <div style="display:flex; flex-direction:column; align-items:center; gap:6px;">
+              <div
+                style="width:24px; height:125px; background:var(--primary); border-radius:6px; box-shadow:0 4px 10px var(--primary-glow);">
+              </div>
+              <span style="font-size:11px; font-weight:800; color:var(--primary);">T</span>
+            </div>
+            <div style="display:flex; flex-direction:column; align-items:center; gap:6px;">
+              <div style="width:24px; height:80px; background:#d4e5da; border-radius:6px;"></div>
+              <span style="font-size:11px; font-weight:700; color:var(--text-muted);">F</span>
+            </div>
+            <div style="display:flex; flex-direction:column; align-items:center; gap:6px;">
+              <div style="width:24px; height:70px; background:#d4e5da; border-radius:6px;"></div>
+              <span style="font-size:11px; font-weight:700; color:var(--text-muted);">S</span>
+            </div>
+            <div style="display:flex; flex-direction:column; align-items:center; gap:6px;">
+              <div style="width:24px; height:60px; background:#d4e5da; border-radius:6px;"></div>
+              <span style="font-size:11px; font-weight:700; color:var(--text-muted);">S</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="macro-mini-card" style="align-items:flex-start; text-align:left; padding: 18px;">
+          <h4 style="font-size:14px; font-weight:800; margin-bottom: 6px;">AI Nutrition Summary</h4>
+          <p style="font-size:12.5px; color:var(--text-muted); line-height: 1.5;">
+            Protein goal reached 6 out of 7 days this week. Smart caching saved 14 external API calls today,
+            accelerating response speeds to &lt;45ms.
+          </p>
+        </div>
+      </section>
+
+      <!-- ================= 4. PROFILE VIEW ================= -->
+      <section class="screen-view active" id="profileView">
+
+        <!-- 1. Top Hero Profile Card -->
+        <div class="clay-profile-card">
+          <div class="clay-avatar-container">
+            <div class="clay-avatar-ring">
+              <img src="/static/assets/avatar.jpg" alt="Elena Rostova" class="clay-avatar-image">
+            </div>
+            <button class="clay-avatar-edit-badge" id="editProfileBtn" title="Edit Profile">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 20h9" />
+                <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+              </svg>
+            </button>
+          </div>
+
+          <h2 class="clay-profile-title" id="profileDisplayName">Elena Rostova</h2>
+          <span class="clay-profile-subtitle" id="profileEmail">elena.rostova@email.com</span>
+
+          <!-- Vitals Dual Sub-Cards Grid -->
+          <div class="clay-vitals-grid">
+            <div class="clay-vital-subcard">
+              <span class="clay-vital-title">WEIGHT</span>
+              <div class="clay-vital-num-row">
+                <span class="clay-vital-num" id="profileWeightVal">64.2</span>
+                <span class="clay-vital-unit">kg</span>
+              </div>
+              <span class="clay-vital-target-green">Goal: 62.0</span>
+            </div>
+
+            <div class="clay-vital-subcard">
+              <span class="clay-vital-title">HEIGHT</span>
+              <div class="clay-vital-num-row">
+                <span class="clay-vital-num">172</span>
+                <span class="clay-vital-unit">cm</span>
+              </div>
+              <span class="clay-vital-target-muted">BMI 21.7</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. PREFERENCES Section -->
+        <div class="clay-group-section">
+          <div class="clay-group-title">PREFERENCES</div>
+          <div class="clay-card-wrapper">
+            <!-- Appearance -->
+            <div class="clay-item-row" id="prefAppearanceRow">
+              <div class="clay-item-left">
+                <div class="clay-icon-bubble mint">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10" />
+                    <path d="M12 2a7 7 0 0 1 7 7c0 2-1 3-2 4s-1.5 2-1 3.5c.3 1-.5 1.5-1.5 1.5H12" />
+                    <circle cx="8" cy="10" r="1" fill="currentColor" />
+                    <circle cx="12" cy="7" r="1" fill="currentColor" />
+                    <circle cx="16" cy="10" r="1" fill="currentColor" />
+                  </svg>
+                </div>
+                <div class="clay-item-details">
+                  <div class="clay-item-name">Appearance</div>
+                  <div class="clay-item-meta" id="appearanceSubLabel">Soft Clay Light Mode</div>
+                </div>
+              </div>
+              <div class="clay-item-right">
+                <div class="clay-toggle-switch" id="themeToggleSwitch" title="Toggle Light / Dark Mode">
+                  <span class="clay-toggle-slider">
+                    <svg class="toggle-moon-icon" width="12" height="12" viewBox="0 0 24 24" fill="none"
+                      stroke="currentColor" stroke-width="2.4">
+                      <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+                    </svg>
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <!-- AI Parser & Voice -->
+            <div class="clay-item-row" id="prefAiRow">
+              <div class="clay-item-left">
+                <div class="clay-icon-bubble mint">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="11" width="18" height="10" rx="2" />
+                    <circle cx="12" cy="5" r="2" />
+                    <path d="M12 7v4" />
+                    <line x1="8" y1="16" x2="8" y2="16" />
+                    <line x1="16" y1="16" x2="16" y2="16" />
+                  </svg>
+                </div>
+                <div class="clay-item-details">
+                  <div class="clay-item-name">AI Parser & Voice</div>
+                  <div class="clay-item-meta text-emerald">Auto-breakdown enabled</div>
+                </div>
+              </div>
+              <div class="clay-item-right">
+                <div class="clay-switch-active" id="aiVoiceSwitch" title="Toggle AI Parser & Voice">
+                  <span class="clay-switch-knob"></span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Units & Standards -->
+            <div class="clay-item-row clickable" id="prefUnitsRow">
+              <div class="clay-item-left">
+                <div class="clay-icon-bubble mint">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="2" y="7" width="20" height="10" rx="2" />
+                    <line x1="6" y1="7" x2="6" y2="11" />
+                    <line x1="10" y1="7" x2="10" y2="13" />
+                    <line x1="14" y1="7" x2="14" y2="11" />
+                    <line x1="18" y1="7" x2="18" y2="13" />
+                  </svg>
+                </div>
+                <div class="clay-item-details">
+                  <div class="clay-item-name">Units & Standards</div>
+                  <div class="clay-item-meta">Metric (kg, cm, kcal, ml)</div>
+                </div>
+              </div>
+              <div class="clay-item-right">
+                <svg class="clay-chevron-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="9 18 15 12 9 6" />
+                </svg>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. CONNECTED APPS Section -->
+        <div class="clay-group-section">
+          <div class="clay-group-title">CONNECTED APPS</div>
+          <div class="clay-card-wrapper">
+            <!-- Apple Health -->
+            <div class="clay-item-row">
+              <div class="clay-item-left">
+                <div class="clay-icon-bubble red-heart">
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor">
+                    <path
+                      d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                  </svg>
+                </div>
+                <div class="clay-item-details">
+                  <div class="clay-item-name">Apple Health</div>
+                  <div class="clay-item-meta sync-active">
+                    <span class="sync-dot-green"></span> Synced 5m ago
+                  </div>
+                </div>
+              </div>
+              <div class="clay-item-right">
+                <span class="clay-active-badge">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                  Active
+                </span>
+              </div>
+            </div>
+
+            <!-- Smart Scale (Withings) -->
+            <div class="clay-item-row">
+              <div class="clay-item-left">
+                <div class="clay-icon-bubble scale-blue">
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="3" width="18" height="18" rx="4" />
+                    <circle cx="12" cy="8" r="2.5" />
+                    <line x1="8" y1="15" x2="16" y2="15" />
+                  </svg>
+                </div>
+                <div class="clay-item-details">
+                  <div class="clay-item-name">Smart Scale (Withings)</div>
+                  <div class="clay-item-meta">Weight & Body Fat Auto-sync</div>
+                </div>
+              </div>
+              <div class="clay-item-right">
+                <span class="clay-active-badge">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                  Active
+                </span>
+              </div>
+            </div>
+
+            <!-- Strava Workouts -->
+            <div class="clay-item-row">
+              <div class="clay-item-left">
+                <div class="clay-icon-bubble strava-orange">
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor">
+                    <path
+                      d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7.926 15.602h4.172" />
+                  </svg>
+                </div>
+                <div class="clay-item-details">
+                  <div class="clay-item-name">Strava Workouts</div>
+                  <div class="clay-item-meta">Import burned calories</div>
+                </div>
+              </div>
+              <div class="clay-item-right">
+                <button class="clay-connect-btn" id="connectStravaBtn">Connect</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4. DATA & ACTIVITY Section -->
+        <div class="clay-group-section">
+          <div class="clay-group-title">DATA & ACTIVITY</div>
+          <div class="clay-card-wrapper">
+            <!-- Saved Meals & Recipes -->
+            <div class="clay-item-row clickable" id="savedMealsRow">
+              <div class="clay-item-left">
+                <div class="clay-icon-bubble mint">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
+                  </svg>
+                </div>
+                <div class="clay-item-details">
+                  <div class="clay-item-name">Saved Meals & Recipes</div>
+                  <div class="clay-item-meta" id="profileSavedMealsCount">14 custom meals logged</div>
+                </div>
+              </div>
+              <div class="clay-item-right">
+                <svg class="clay-chevron-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="9 18 15 12 9 6" />
+                </svg>
+              </div>
+            </div>
+
+            <!-- Meal Reminders -->
+            <div class="clay-item-row clickable" id="mealRemindersRow">
+              <div class="clay-item-left">
+                <div class="clay-icon-bubble mint">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                    <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+                  </svg>
+                </div>
+                <div class="clay-item-details">
+                  <div class="clay-item-name">Meal Reminders</div>
+                  <div class="clay-item-meta">8:00 AM • 1:00 PM • 7:30 PM</div>
+                </div>
+              </div>
+              <div class="clay-item-right">
+                <svg class="clay-chevron-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="9 18 15 12 9 6" />
+                </svg>
+              </div>
+            </div>
+
+            <!-- Export Nutrition History -->
+            <div class="clay-item-row clickable" id="exportHistoryRow">
+              <div class="clay-item-left">
+                <div class="clay-icon-bubble mint">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                    <polyline points="7 10 12 15 17 10" />
+                    <line x1="12" y1="15" x2="12" y2="3" />
+                  </svg>
+                </div>
+                <div class="clay-item-details">
+                  <div class="clay-item-name">Export Nutrition History</div>
+                  <div class="clay-item-meta">Download CSV or PDF health reports</div>
+                </div>
+              </div>
+              <div class="clay-item-right">
+                <svg class="clay-chevron-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="9 18 15 12 9 6" />
+                </svg>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 5. ABOUT & DEVELOPER Section -->
+        <div class="clay-group-section">
+          <div class="clay-group-title">ABOUT & DEVELOPER</div>
+          <div class="clay-card-wrapper">
+            <div class="clay-item-row">
+              <div class="clay-item-left">
+                <div class="clay-icon-bubble mint">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="16 18 22 12 16 6" />
+                    <polyline points="8 6 2 12 8 18" />
+                  </svg>
+                </div>
+                <div class="clay-item-details">
+                  <div class="clay-item-name">Developer Name</div>
+                  <div class="clay-item-meta">Lead Product Designer & Engineer</div>
+                </div>
+              </div>
+              <div class="clay-item-right">
+                <a class="clay-portfolio-btn" href="https://github.com" target="_blank" rel="noopener noreferrer"
+                  title="View Portfolio">
+                  <span>Portfolio</span>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4">
+                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                    <polyline points="15 3 21 3 21 9" />
+                    <line x1="10" y1="14" x2="21" y2="3" />
+                  </svg>
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 6. Log Out Button -->
+        <button class="clay-logout-btn" id="logoutBtn" title="Log Out">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+            <polyline points="16 17 21 12 16 7" />
+            <line x1="21" y1="12" x2="9" y2="12" />
+          </svg>
+          <span>Log Out</span>
+        </button>
+
+        <!-- 7. Footer Info -->
+        <div class="clay-profile-footer">
+          <div>Macroly v2.4.1 (Build 412)</div>
+          <div>Encrypted with Apple HealthKit & Health Connect</div>
+        </div>
+
+      </section>
+
+    </main>
+
+    <!-- Sticky Chat Input Container (Visible on Chat Screen) -->
+    <div class="chat-input-sticky-container" id="chatStickyBar" style="display: none;">
+      <!-- Quick Suggestion Chips -->
+      <div class="quick-chips-scroll">
+        <button class="suggestion-chip" data-text="☕ Morning Coffee">☕ Morning Coffee</button>
+        <button class="suggestion-chip" data-text="🍎 Snack">🍎 Snack</button>
+        <button class="suggestion-chip" data-text="🔲 Scan barcode">🔲 Scan barcode</button>
+        <button class="suggestion-chip" data-text="Make that 3 rotis actually!">Make that 3 rotis actually!</button>
+        <button class="suggestion-chip" data-text="Ran for 30 mins">🏃 Ran for 30 mins</button>
+      </div>
+
+      <!-- Chat Input Field Bar -->
+      <div class="chat-input-bar-pill">
+        <button class="chat-mic-btn" id="chatMicBtn" title="Speech to text">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
+            <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+            <line x1="12" y1="19" x2="12" y2="23" />
+            <line x1="8" y1="23" x2="16" y2="23" />
+          </svg>
+        </button>
+        <input type="text" id="chatTextInput" placeholder="Tell Macroly what you had..." autocomplete="off">
+        <button class="chat-send-btn" id="chatSendBtn" title="Send">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"
+            stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="19" x2="12" y2="5" />
+            <polyline points="5 12 12 5 19 12" />
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Floating Bottom Navigation Bar -->
+    <nav class="bottom-nav-bar">
+      <a class="nav-item" id="navHomeBtn" title="Home">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"
+          stroke-linejoin="round">
+          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+          <polyline points="9 22 9 12 15 12 15 22" />
+        </svg>
+        <span>Home</span>
+      </a>
+
+      <button class="nav-plus-float" id="navPlusBtn" title="Open AI Nutrition Logger">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8"
+          stroke-linecap="round" stroke-linejoin="round">
+          <line x1="12" y1="5" x2="12" y2="19" />
+          <line x1="5" y1="12" x2="19" y2="12" />
+        </svg>
+      </button>
+
+      <a class="nav-item" id="navStatsBtn" title="Stats">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"
+          stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10" />
+          <polyline points="12 6 12 12 16 14" />
+        </svg>
+        <span>Stats</span>
+      </a>
+
+      <a class="nav-item active" id="navProfileBtn" title="Profile">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"
+          stroke-linejoin="round">
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+          <circle cx="12" cy="7" r="4" />
+        </svg>
+        <span>Profile</span>
+      </a>
+    </nav>
+
+    <!-- Manual Override Bottom Sheet Modal -->
+    <div class="modal-backdrop" id="overrideModal">
+      <div class="modal-sheet">
+        <div class="modal-drag-pill"></div>
+        <div class="modal-title-row">
+          <h3 class="modal-title" id="modalMealTitle">Adjust Meal Portions</h3>
+          <button class="modal-close-btn" id="modalCloseBtn">&times;</button>
+        </div>
+        <p style="font-size:12px; color:var(--text-muted);">
+          Tap +/- to adjust portions or delete individual items. Macroly recalculates your daily rings instantly.
+        </p>
+
+        <div class="edit-items-container" id="modalItemsList">
+          <!-- Populated dynamically -->
+        </div>
+
+        <button class="modal-save-btn" id="modalSaveBtn">Save & Sync Dashboard</button>
+      </div>
+    </div>
+
+    <!-- ================= AUTHENTICATION OVERLAY ================= -->
+    <div class="auth-overlay hidden" id="authOverlay">
+      <div class="auth-card">
+        <div class="auth-header">
+          <div class="auth-logo-badge">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+              stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8z" opacity="0.3" />
+              <path d="M12 2a10 10 0 0 1 10 10" />
+              <circle cx="12" cy="12" r="3" />
+            </svg>
+          </div>
+          <h2 class="auth-title">Welcome to Macroly</h2>
+          <p class="auth-subtitle">AI-Powered Macro & Nutrition Companion</p>
+        </div>
+
+        <!-- Auth Mode Tabs -->
+        <div class="auth-tabs">
+          <button type="button" class="auth-tab-btn active" id="tabSignIn">Sign In</button>
+          <button type="button" class="auth-tab-btn" id="tabSignUp">Create Account</button>
+        </div>
+
+        <!-- Error Notification Banner -->
+        <div class="auth-error-banner" id="authErrorBanner"></div>
+
+        <!-- Email & Password Form -->
+        <form class="auth-form" id="authEmailForm">
+          <div class="auth-field-group">
+            <label class="auth-label">Email Address</label>
+            <input type="email" class="auth-input" id="authEmailInput" placeholder="alex@example.com" required
+              autocomplete="email">
+          </div>
+          <div class="auth-field-group">
+            <label class="auth-label">Password</label>
+            <input type="password" class="auth-input" id="authPasswordInput" placeholder="Min. 6 characters" required
+              autocomplete="current-password">
+          </div>
+          <button type="submit" class="auth-btn-primary" id="authSubmitBtn">Sign In</button>
+        </form>
+
+        <div class="auth-divider">or continue with</div>
+
+        <!-- Google OAuth Button -->
+        <button type="button" class="auth-btn-google" id="googleSignInBtn">
+          <svg width="18" height="18" viewBox="0 0 24 24">
+            <path fill="#4285F4"
+              d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z" />
+            <path fill="#34A853"
+              d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.35 24 12 24z" />
+            <path fill="#FBBC05"
+              d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 9.99 0 12s.45 3.82 1.25 5.42l4.03-3.15z" />
+            <path fill="#EA4335"
+              d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.35 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z" />
+          </svg>
+          <span>Continue with Google</span>
+        </button>
+
+        <!-- Quick Demo Account Shortcut -->
+        <button type="button" class="auth-demo-pill" id="demoAccountBtn">
+          <span>⚡</span>
+          <span>Explore Seeded Demo Account (Elena)</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- ================= ONBOARDING MODAL ================= -->
+    <div class="auth-overlay hidden" id="onboardingOverlay">
+      <div class="onboarding-card">
+        <div class="auth-header">
+          <div class="auth-logo-badge" style="background: linear-gradient(135deg, #fbbf24 0%, #d97706 100%);">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+              stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10" />
+              <circle cx="12" cy="12" r="6" />
+              <circle cx="12" cy="12" r="2" />
+            </svg>
+          </div>
+          <h2 class="auth-title">Set Your Targets 🎯</h2>
+          <p class="auth-subtitle">Customize your daily calories and macros or keep sensible defaults</p>
+        </div>
+
+        <div class="auth-field-group">
+          <label class="auth-label">Daily Calories (kcal)</label>
+          <input type="number" class="auth-input" id="onboardCalories" value="2000" min="1000" max="6000" step="50">
+        </div>
+
+        <div class="onboarding-grid">
+          <div class="auth-field-group">
+            <label class="auth-label">Protein (g)</label>
+            <input type="number" class="auth-input" id="onboardProtein" value="130" min="20" max="400" step="5">
+          </div>
+          <div class="auth-field-group">
+            <label class="auth-label">Carbs (g)</label>
+            <input type="number" class="auth-input" id="onboardCarbs" value="220" min="20" max="600" step="5">
+          </div>
+        </div>
+
+        <div class="auth-field-group">
+          <label class="auth-label">Fats (g)</label>
+          <input type="number" class="auth-input" id="onboardFats" value="65" min="10" max="250" step="5">
+        </div>
+
+        <div class="onboarding-btn-row">
+          <button type="button" class="onboarding-skip-btn" id="onboardSkipBtn">Skip (Use Defaults)</button>
+          <button type="button" class="onboarding-save-btn" id="onboardSaveBtn">Save & Start</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="/static/js/api.js"></script>
+  <script src="/static/js/app.js"></script>
+</body>
+
+</html>
