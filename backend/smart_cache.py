@@ -217,6 +217,37 @@ class SmartCache:
                         ml_val = float(m_ml.group(1))
                         scale = scale * (ml_val / 250.0)
 
+                # Check if unit is in grams (e.g. "20g", "20 gram", unit="gram", quantity=20)
+                if unit and str(unit).lower() in ["g", "gram", "grams"] and row_dict.get("serving_unit") not in ["g", "gram", "grams"]:
+                    scale = (quantity / 100.0)
+                elif unit and re.search(r'(\d+(?:\.\d+)?)\s*(?:g|gram|grams)\b', str(unit), re.I) and row_dict.get("serving_unit") not in ["g", "gram"]:
+                    m_g = re.search(r'(\d+(?:\.\d+)?)\s*(?:g|gram|grams)\b', str(unit), re.I)
+                    if m_g:
+                        g_val = float(m_g.group(1))
+                        scale = scale * (g_val / 100.0)
+
+                # Special portion modifier: e.g. "chicken curry" with unit "portion with 20g chicken"
+                if unit and "curry" in row_dict.get("food_key", "") and re.search(r'(\d+(?:\.\d+)?)\s*g\b.*chicken', str(unit), re.I):
+                    m_chk = re.search(r'(\d+(?:\.\d+)?)\s*g\b', str(unit), re.I)
+                    if m_chk:
+                        chicken_g = float(m_chk.group(1))
+                        # Base gravy ~100 kcal, 2.5g P, 8g C, 6g F + chicken (1.65 kcal/g, 0.31g P/g)
+                        curry_cal = int(round(100.0 + chicken_g * 1.65))
+                        curry_p = round(2.5 + chicken_g * 0.31, 1)
+                        curry_c = 8.0
+                        curry_f = round(6.0 + chicken_g * 0.04, 1)
+                        return {
+                            "name": row_dict["name"],
+                            "quantity": quantity,
+                            "unit": unit,
+                            "calories": curry_cal,
+                            "protein": curry_p,
+                            "carbs": curry_c,
+                            "fats": curry_f,
+                            "cached": True,
+                            "hits": row_dict["hit_count"] + 1
+                        }
+
                 return {
                     "name": row_dict["name"],
                     "quantity": quantity,

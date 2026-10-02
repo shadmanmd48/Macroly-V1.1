@@ -29,7 +29,8 @@ UNIT_WORDS = [
 CONVERSATIONAL_NOISE = [
     "along with", "finished with", "savory", "delicious", "indulged in", "indulged",
     "craving", "craved", "devoured", "grabbed", "side of", "followed by", "bunch of",
-    "couple of", "plateful of", "taste of", "order of", "serving of", "snacked on"
+    "couple of", "plateful of", "taste of", "order of", "serving of", "snacked on",
+    "approx", "approximately", "roughly", "around"
 ]
 
 INTENT_FOOD_LOG = "food_log"
@@ -479,15 +480,16 @@ class AIInterpreter:
             system_prompt = (
                 "You are an expert nutritional food parser. "
                 "Analyze the user's food log message and extract all individual food items, their numerical quantities, "
-                "and standard serving units (e.g. piece, slice, bowl, cup, glass, plate, gram, scoop, serving, or explicit portion like 250ml). "
-                "CRITICAL: Each food item must strictly get its own independent quantity from its own phrase. Do NOT assign or inherit quantities across items. If an item has a volume/weight like '250ml milk', quantity should be 1 and unit should be '250ml'. "
+                "and standard serving units. "
+                "If an item is described with an ingredient portion (e.g., 'chicken curry with approx 20g chicken'), capture it as the dish (e.g. name: 'chicken curry', quantity: 1, unit: 'portion with 20g chicken'). Do NOT double count the meat as a separate item. Never drop items. "
+                "Each food item must strictly get its own independent quantity from its own phrase. Do NOT assign or inherit quantities across items. "
                 "Also identify the overall meal_type (Breakfast, Lunch, Dinner, or Snack). "
                 "You must return ONLY a valid JSON object matching this exact schema with no extra text or markdown formatting:\n"
                 '{"items": [{"name": "string", "quantity": number, "unit": "string"}], "meal_type": "string"}'
             )
 
             # Primary model available on Groq with fallbacks
-            candidate_models = ["openai/gpt-oss-120b", "openai/gpt-oss-20b", "qwen/qwen3.8-27b"]
+            candidate_models = ["qwen/qwen3.8-27b", "openai/gpt-oss-120b", "openai/gpt-oss-20b"]
             completion = None
             for model_name in candidate_models:
                 try:
@@ -652,6 +654,7 @@ class AIInterpreter:
 
         # Clean conversational noise prefix within segment
         seg = re.sub(r'^(?:a\s+couple\s+of|a\s+few|a\s+plate\s+of|a\s+serving\s+of|a\s+glass\s+of|a\s+cup\s+of|a\s+bowl\s+of|some|also|just)\s+', '', text, flags=re.I).strip()
+        seg = re.sub(r'\b(?:approx|approximately|around|roughly|about|nearly)\b', '', seg, flags=re.I).strip()
         if not seg:
             seg = text
 
