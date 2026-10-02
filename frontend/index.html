@@ -35,18 +35,46 @@
 
   <div class="device-container" id="app">
     <header class="app-header">
-      <div class="brand-section">
-        <div class="brand-logo-circle">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
-            stroke-linejoin="round">
-            <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8z" opacity="0.3" />
-            <path d="M12 2a10 10 0 0 1 10 10" />
-            <circle cx="12" cy="12" r="3" />
+      <div class="brand-section" id="headerBrandSection">
+        <button class="header-back-btn" id="headerBackBtn" title="Back to Dashboard" style="display: none;">
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="15 18 9 12 15 6"></polyline>
+          </svg>
+        </button>
+        <div class="brand-logo-badge" id="brandLogoBadge" title="Macroly Tracker">
+          <svg width="34" height="34" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="macrolySquircleGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#14241b" />
+                <stop offset="100%" stop-color="#080e0a" />
+              </linearGradient>
+              <linearGradient id="macrolyGreenGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#86efac" />
+                <stop offset="50%" stop-color="#4ade80" />
+                <stop offset="100%" stop-color="#22c55e" />
+              </linearGradient>
+              <linearGradient id="macrolyLeafGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#bbf7d0" />
+                <stop offset="100%" stop-color="#34d399" />
+              </linearGradient>
+              <filter id="macrolyGlow" x="-20%" y="-20%" width="140%" height="140%">
+                <feDropShadow dx="0" dy="1.5" stdDeviation="2" flood-color="#22c55e" flood-opacity="0.35" />
+              </filter>
+            </defs>
+            <rect width="40" height="40" rx="11" fill="url(#macrolySquircleGrad)" stroke="rgba(74, 222, 128, 0.28)" stroke-width="1.2" />
+            <!-- Sprouting Leaf -->
+            <g transform="translate(24, 6) scale(0.62)" filter="url(#macrolyGlow)">
+              <path d="M4 14 C4 6 11 1 18 0 C18 7 13 14 4 14 Z" fill="url(#macrolyLeafGrad)" />
+              <path d="M5.5 12.5 Q11 7 16 2" stroke="#166534" stroke-width="1.3" stroke-linecap="round" />
+            </g>
+            <!-- Rounded 'm' Glyph -->
+            <path d="M10 29 V19 C10 15 13 12.5 16.5 12.5 C20 12.5 22 15 22 19 V29 M22 19 C22 15 25 12.5 28.5 12.5 C32 12.5 34 15 34 19 V29"
+                  stroke="url(#macrolyGreenGrad)" stroke-width="4.2" stroke-linecap="round" stroke-linejoin="round" filter="url(#macrolyGlow)" />
           </svg>
         </div>
         <div class="brand-titles">
           <span class="brand-tag">MACROLY TRACKER</span>
-          <span class="brand-screen-name" id="currentScreenTitle">Ai Nutrition Logger</span>
+          <span class="brand-screen-name" id="currentScreenTitle">Dashboard</span>
         </div>
       </div>
       <div class="header-user-avatar" id="avatarBtn" title="Profile & Settings">
@@ -445,7 +473,35 @@
           </div>
         </div>
 
-        <!-- 2. PREFERENCES Section -->
+        <!-- 2. DAILY NUTRITION GOALS Section -->
+        <div class="clay-group-section">
+          <div class="clay-group-header-row">
+            <span class="clay-group-title">DAILY NUTRITION TARGETS</span>
+            <button type="button" class="clay-action-link" id="editGoalsBtn">Edit Targets</button>
+          </div>
+          <div class="clay-card-wrapper clay-goals-summary-card">
+            <div class="profile-goal-stat-row">
+              <div class="goal-stat-item">
+                <span class="goal-stat-label">Daily Calories</span>
+                <span class="goal-stat-val" id="profileGoalCalVal">2,000 <small>kcal</small></span>
+              </div>
+              <div class="goal-stat-item">
+                <span class="goal-stat-label">Protein</span>
+                <span class="goal-stat-val text-protein" id="profileGoalProteinVal">130 <small>g</small></span>
+              </div>
+              <div class="goal-stat-item">
+                <span class="goal-stat-label">Carbs</span>
+                <span class="goal-stat-val text-carbs" id="profileGoalCarbVal">220 <small>g</small></span>
+              </div>
+              <div class="goal-stat-item">
+                <span class="goal-stat-label">Fats</span>
+                <span class="goal-stat-val text-fats" id="profileGoalFatVal">65 <small>g</small></span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. PREFERENCES Section -->
         <div class="clay-group-section">
           <div class="clay-group-title">PREFERENCES</div>
           <div class="clay-card-wrapper">
@@ -787,7 +843,7 @@
         <span>Stats</span>
       </a>
 
-      <a class="nav-item active" id="navProfileBtn" title="Profile">
+      <a class="nav-item" id="navProfileBtn" title="Profile">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"
           stroke-linejoin="round">
           <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
@@ -817,11 +873,46 @@
       </div>
     </div>
 
+    <!-- Edit Daily Goals Modal -->
+    <div class="modal-backdrop" id="goalsModal">
+      <div class="modal-sheet">
+        <div class="modal-drag-pill"></div>
+        <div class="modal-title-row">
+          <h3 class="modal-title">Edit Nutrition Targets</h3>
+          <button class="modal-close-btn" id="goalsModalCloseBtn">&times;</button>
+        </div>
+        <p style="font-size:12px; color:var(--text-muted); margin-bottom: 12px;">
+          Personalize your daily nutrition and calorie budget. Macroly will synchronize your progress rings immediately.
+        </p>
+
+        <div class="onboard-grid" style="margin-bottom: 16px;">
+          <div class="onboard-input-box">
+            <label class="onboard-label">Daily Calories (kcal)</label>
+            <input type="number" class="onboard-input" id="modalGoalCalories" placeholder="2000" min="500" max="10000">
+          </div>
+          <div class="onboard-input-box">
+            <label class="onboard-label">Protein Target (g)</label>
+            <input type="number" class="onboard-input" id="modalGoalProtein" placeholder="130" min="10" max="500">
+          </div>
+          <div class="onboard-input-box">
+            <label class="onboard-label">Carbs Target (g)</label>
+            <input type="number" class="onboard-input" id="modalGoalCarbs" placeholder="220" min="10" max="1000">
+          </div>
+          <div class="onboard-input-box">
+            <label class="onboard-label">Fats Target (g)</label>
+            <input type="number" class="onboard-input" id="modalGoalFats" placeholder="65" min="5" max="300">
+          </div>
+        </div>
+
+        <button class="modal-save-btn" id="modalSaveGoalsBtn">Save Nutrition Targets</button>
+      </div>
+    </div>
+
     <!-- ================= AUTHENTICATION OVERLAY ================= -->
     <div class="auth-overlay hidden" id="authOverlay">
       <div class="auth-card">
         <div class="auth-header">
-          <div class="auth-logo-badge">
+          <div class="auth-logo-badge" id="authBrandLogoBadge" style="cursor: pointer;" title="Macroly">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
               stroke-linecap="round" stroke-linejoin="round">
               <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8z" opacity="0.3" />
@@ -874,8 +965,8 @@
           <span>Continue with Google</span>
         </button>
 
-        <!-- Quick Demo Account Shortcut -->
-        <button type="button" class="auth-demo-pill" id="demoAccountBtn">
+        <!-- Quick Demo Account Shortcut (Protected: developer/admin only) -->
+        <button type="button" class="auth-demo-pill" id="demoAccountBtn" style="display: none;">
           <span>⚡</span>
           <span>Explore Seeded Demo Account (Elena)</span>
         </button>

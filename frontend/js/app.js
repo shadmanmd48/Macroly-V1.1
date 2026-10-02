@@ -116,6 +116,9 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  const headerBackBtn = document.getElementById("headerBackBtn");
+  const headerBrandSection = document.getElementById("headerBrandSection");
+
   // Navigation Logic
   function switchScreen(screen) {
     activeScreen = screen;
@@ -133,10 +136,12 @@ document.addEventListener("DOMContentLoaded", () => {
       currentScreenTitle.textContent = "Dashboard";
       navHomeBtn.classList.add("active");
       chatStickyBar.style.display = "none";
+      if (headerBackBtn) headerBackBtn.style.display = "none";
     } else if (screen === "chat") {
       chatView.classList.add("active");
       currentScreenTitle.textContent = "Ai Nutrition Logger";
       chatStickyBar.style.display = "flex";
+      if (headerBackBtn) headerBackBtn.style.display = "flex";
       setTimeout(() => {
         scrollChatToBottom(false);
       }, 40);
@@ -145,14 +150,16 @@ document.addEventListener("DOMContentLoaded", () => {
       currentScreenTitle.textContent = "Weekly Trends";
       navStatsBtn.classList.add("active");
       chatStickyBar.style.display = "none";
+      if (headerBackBtn) headerBackBtn.style.display = "flex";
       renderCalendar();
       renderSelectedDayInfo(selectedCalDate);
       renderWeeklyStreakBars();
     } else if (screen === "profile") {
       if (profileView) profileView.classList.add("active");
-      currentScreenTitle.textContent = "Ai Nutrition Logger";
+      currentScreenTitle.textContent = "My Profile";
       navProfileBtn.classList.add("active");
       chatStickyBar.style.display = "none";
+      if (headerBackBtn) headerBackBtn.style.display = "flex";
     }
   }
 
@@ -161,6 +168,14 @@ document.addEventListener("DOMContentLoaded", () => {
   navStatsBtn.addEventListener("click", () => switchScreen("stats"));
   navProfileBtn.addEventListener("click", () => switchScreen("profile"));
   if (avatarBtn) avatarBtn.addEventListener("click", () => switchScreen("profile"));
+  if (headerBackBtn) headerBackBtn.addEventListener("click", () => switchScreen("dashboard"));
+  if (headerBrandSection) {
+    headerBrandSection.addEventListener("click", (e) => {
+      if (e.target !== headerBackBtn && !headerBackBtn.contains(e.target)) {
+        switchScreen("dashboard");
+      }
+    });
+  }
   viewAllLink.addEventListener("click", () => switchScreen("chat"));
 
   // Profile Interactive Controls & Theme Toggle
@@ -328,36 +343,42 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function renderDashboardData(data) {
+    latestDashboardData = data;
+
     // Calories
     calsConsumedVal.textContent = data.calories_consumed.toLocaleString();
     calsTargetVal.textContent = data.calorie_target.toLocaleString();
     calsLeftPill.textContent = `${data.calories_left.toLocaleString()} kcal left`;
 
     const calCircumference = 402;
-    const calPct = Math.min(1, data.calories_consumed / data.calorie_target);
+    const targetCals = Math.max(1, data.calorie_target);
+    const calPct = Math.min(1, data.calories_consumed / targetCals);
     calorieArc.style.strokeDashoffset = calCircumference - (calCircumference * calPct);
 
     // Protein
     pVal.textContent = Math.round(data.protein_consumed);
     pTarget.textContent = Math.round(data.protein_target);
-    const pPercent = Math.round((data.protein_consumed / data.protein_target) * 100);
+    const targetProtein = Math.max(1, data.protein_target);
+    const pPercent = Math.round((data.protein_consumed / targetProtein) * 100);
     pPct.textContent = `${pPercent}%`;
     const miniCircumference = 100.5;
-    proteinRing.style.strokeDashoffset = miniCircumference - (miniCircumference * Math.min(1, data.protein_consumed / data.protein_target));
+    proteinRing.style.strokeDashoffset = miniCircumference - (miniCircumference * Math.min(1, data.protein_consumed / targetProtein));
 
     // Carbs
     cVal.textContent = Math.round(data.carbs_consumed);
     cTarget.textContent = Math.round(data.carbs_target);
-    const cPercent = Math.round((data.carbs_consumed / data.carbs_target) * 100);
+    const targetCarbs = Math.max(1, data.carbs_target);
+    const cPercent = Math.round((data.carbs_consumed / targetCarbs) * 100);
     cPct.textContent = `${cPercent}%`;
-    carbsRing.style.strokeDashoffset = miniCircumference - (miniCircumference * Math.min(1, data.carbs_consumed / data.carbs_target));
+    carbsRing.style.strokeDashoffset = miniCircumference - (miniCircumference * Math.min(1, data.carbs_consumed / targetCarbs));
 
     // Fats
     fVal.textContent = Math.round(data.fats_consumed);
     fTarget.textContent = Math.round(data.fats_target);
-    const fPercent = Math.round((data.fats_consumed / data.fats_target) * 100);
+    const targetFats = Math.max(1, data.fats_target);
+    const fPercent = Math.round((data.fats_consumed / targetFats) * 100);
     fPct.textContent = `${fPercent}%`;
-    fatsRing.style.strokeDashoffset = miniCircumference - (miniCircumference * Math.min(1, data.fats_consumed / data.fats_target));
+    fatsRing.style.strokeDashoffset = miniCircumference - (miniCircumference * Math.min(1, data.fats_consumed / targetFats));
 
     // Vitals
     workoutKcalVal.innerHTML = `${data.vitals.workout_kcal} <span class="vital-sub-val">kcal</span>`;
@@ -373,6 +394,16 @@ document.addEventListener("DOMContentLoaded", () => {
     if (profileSavedMeals && data.meals) {
       profileSavedMeals.textContent = `${data.meals.length} custom meals logged`;
     }
+
+    // Sync Goals Summary Card in Profile View
+    const profCal = document.getElementById("profileGoalCalVal");
+    const profP = document.getElementById("profileGoalProteinVal");
+    const profC = document.getElementById("profileGoalCarbVal");
+    const profF = document.getElementById("profileGoalFatVal");
+    if (profCal) profCal.innerHTML = `${Math.round(data.calorie_target || 2000).toLocaleString()} <small>kcal</small>`;
+    if (profP) profP.innerHTML = `${Math.round(data.protein_target || 130)} <small>g</small>`;
+    if (profC) profC.innerHTML = `${Math.round(data.carbs_target || 220)} <small>g</small>`;
+    if (profF) profF.innerHTML = `${Math.round(data.fats_target || 65)} <small>g</small>`;
 
     if (userGreeting && data.greeting) {
       userGreeting.innerHTML = data.greeting.replace(", ", ",<br>");
@@ -392,6 +423,17 @@ document.addEventListener("DOMContentLoaded", () => {
     // Meals List
     mealsCountPill.textContent = `${data.meals.length} meals`;
     mealsListContainer.innerHTML = "";
+
+    if (!data.meals || data.meals.length === 0) {
+      mealsListContainer.innerHTML = `
+        <div style="text-align: center; padding: 24px 16px; background: var(--bg-card); border-radius: var(--radius-lg); border: 1px solid var(--border-card); margin: 6px 0;">
+          <div style="font-size: 26px; margin-bottom: 6px;">🥗</div>
+          <div style="font-weight: 700; color: var(--text-main); font-size: 13.5px; margin-bottom: 4px;">No meals logged yet today</div>
+          <div style="font-size: 12px; color: var(--text-muted); line-height: 1.4;">Type or speak into AI Quick Log to record your breakfast, lunch, or snack!</div>
+        </div>
+      `;
+      return;
+    }
 
     data.meals.forEach(meal => {
       const card = document.createElement("div");
@@ -451,6 +493,77 @@ document.addEventListener("DOMContentLoaded", () => {
       });
 
       mealsListContainer.appendChild(card);
+  }
+
+  // Goals Management Modal Handlers
+  const editGoalsBtn = document.getElementById("editGoalsBtn");
+  const goalsModal = document.getElementById("goalsModal");
+  const goalsModalCloseBtn = document.getElementById("goalsModalCloseBtn");
+  const modalSaveGoalsBtn = document.getElementById("modalSaveGoalsBtn");
+  const modalGoalCalories = document.getElementById("modalGoalCalories");
+  const modalGoalProtein = document.getElementById("modalGoalProtein");
+  const modalGoalCarbs = document.getElementById("modalGoalCarbs");
+  const modalGoalFats = document.getElementById("modalGoalFats");
+
+  if (editGoalsBtn && goalsModal) {
+    editGoalsBtn.addEventListener("click", () => {
+      const cal = currentUserProfile ? currentUserProfile.calorie_goal : (latestDashboardData ? latestDashboardData.calorie_target : 2000);
+      const p = currentUserProfile ? currentUserProfile.protein_goal : (latestDashboardData ? latestDashboardData.protein_target : 130);
+      const c = currentUserProfile ? currentUserProfile.carb_goal : (latestDashboardData ? latestDashboardData.carbs_target : 220);
+      const f = currentUserProfile ? currentUserProfile.fat_goal : (latestDashboardData ? latestDashboardData.fats_target : 65);
+
+      if (modalGoalCalories) modalGoalCalories.value = Math.round(cal);
+      if (modalGoalProtein) modalGoalProtein.value = Math.round(p);
+      if (modalGoalCarbs) modalGoalCarbs.value = Math.round(c);
+      if (modalGoalFats) modalGoalFats.value = Math.round(f);
+
+      goalsModal.classList.add("open");
+    });
+  }
+
+  function closeGoalsModal() {
+    if (goalsModal) goalsModal.classList.remove("open");
+  }
+
+  if (goalsModalCloseBtn) {
+    goalsModalCloseBtn.addEventListener("click", closeGoalsModal);
+  }
+  if (goalsModal) {
+    goalsModal.addEventListener("click", (e) => {
+      if (e.target === goalsModal) closeGoalsModal();
+    });
+  }
+
+  if (modalSaveGoalsBtn) {
+    modalSaveGoalsBtn.addEventListener("click", async () => {
+      const cal = parseInt(modalGoalCalories.value) || 2000;
+      const p = parseFloat(modalGoalProtein.value) || 130;
+      const c = parseFloat(modalGoalCarbs.value) || 220;
+      const f = parseFloat(modalGoalFats.value) || 65;
+
+      modalSaveGoalsBtn.disabled = true;
+      modalSaveGoalsBtn.textContent = "Saving Targets...";
+
+      try {
+        const res = await api.updateGoals({
+          calorie_goal: cal,
+          protein_goal: p,
+          carb_goal: c,
+          fat_goal: f
+        });
+        if (res.user) currentUserProfile = res.user;
+        closeGoalsModal();
+        if (res.dashboard) {
+          renderDashboardData(res.dashboard);
+        } else {
+          await refreshDashboard();
+        }
+      } catch (err) {
+        alert("Failed to update goals: " + err.message);
+      } finally {
+        modalSaveGoalsBtn.disabled = false;
+        modalSaveGoalsBtn.textContent = "Save Nutrition Targets";
+      }
     });
   }
 
@@ -665,6 +778,29 @@ document.addEventListener("DOMContentLoaded", () => {
   // Initial Mockup 1 Chat Seed
   function initMockupChatSeed() {
     chatMessagesContainer.innerHTML = "";
+
+    const isElena = !currentUserProfile || 
+                    currentUserProfile.id.includes("elena") || 
+                    currentUserProfile.id === "Elena" || 
+                    currentUserProfile.email === "elena.rostova@email.com";
+
+    if (!isElena) {
+      const firstName = currentUserProfile.display_name ? currentUserProfile.display_name.split(" ")[0] : "there";
+      const welcomeHtml = `
+        <div class="chat-response-ai">
+          <div class="ai-message-sender-tag">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+            Macroly AI • Just now
+          </div>
+          <div class="ai-dialogue-text">
+            Hi ${firstName}! 👋 Welcome to Macroly. Tell me or speak what you ate today (e.g. <i>"2 boiled eggs and avocado sourdough"</i>), and I will calculate your calories and nutrition goals immediately!
+          </div>
+        </div>
+      `;
+      chatMessagesContainer.insertAdjacentHTML("beforeend", welcomeHtml);
+      scrollChatToBottom(false);
+      return;
+    }
 
     // 1. User original message
     appendUserBubble("Had 2 whole wheat rotis with a bowl of chicken curry and cucumber salad for dinner", "8:14 PM");
@@ -968,9 +1104,14 @@ document.addEventListener("DOMContentLoaded", () => {
     try {
       const aiResponse = await api.sendChatMessage(text);
       hideAiLoadingBubble();
-      appendAIMessage(aiResponse);
+      const messageToRender = aiResponse.message || aiResponse;
+      appendAIMessage(messageToRender);
       scrollChatToBottom(true);
-      await refreshDashboard();
+      if (aiResponse.dashboard) {
+        renderDashboardData(aiResponse.dashboard);
+      } else {
+        await refreshDashboard();
+      }
     } catch (e) {
       console.error(e);
       hideAiLoadingBubble();
@@ -1201,8 +1342,15 @@ document.addEventListener("DOMContentLoaded", () => {
     clearAuthError();
 
     try {
-      const profile = await api.getUserProfile();
+      // Parallelize profile & dashboard requests for instant screen load
+      const [profile, dashboard] = await Promise.all([
+        api.getUserProfile(),
+        api.getDashboard()
+      ]);
+
       currentUserProfile = profile;
+      latestDashboardData = dashboard;
+
       if (profileDisplayName) profileDisplayName.textContent = profile.display_name;
       if (profileEmail) profileEmail.textContent = profile.email;
       if (userGreeting && profile.display_name) {
@@ -1220,7 +1368,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (onboardingOverlay) onboardingOverlay.classList.add("hidden");
       }
 
-      await refreshDashboard();
+      renderDashboardData(dashboard);
       initMockupChatSeed();
       switchScreen("dashboard");
     } catch (e) {
@@ -1360,10 +1508,30 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // Demo Elena Account Shortcut
+  // Protected Demo Account Shortcut (Admin/Developer only)
+  const isDevOrDemoMode = window.location.search.includes("demo") || 
+                          window.location.search.includes("dev") || 
+                          window.location.search.includes("admin");
   if (demoAccountBtn) {
+    if (isDevOrDemoMode) {
+      demoAccountBtn.style.display = "flex";
+    }
+
     demoAccountBtn.addEventListener("click", async () => {
       await handleAuthSuccess("elena-demo-token");
+    });
+  }
+
+  // Secret admin unlock: 3 taps on auth modal logo reveals demo button
+  const authBrandLogoBadge = document.getElementById("authBrandLogoBadge");
+  if (authBrandLogoBadge && demoAccountBtn) {
+    let logoTaps = 0;
+    authBrandLogoBadge.addEventListener("click", () => {
+      logoTaps++;
+      if (logoTaps >= 3) {
+        demoAccountBtn.style.display = demoAccountBtn.style.display === "none" ? "flex" : "none";
+        logoTaps = 0;
+      }
     });
   }
 
@@ -1375,12 +1543,23 @@ document.addEventListener("DOMContentLoaded", () => {
       const c = parseFloat(onboardCarbs.value) || 220;
       const f = parseFloat(onboardFats.value) || 65;
 
+      onboardSaveBtn.disabled = true;
+      onboardSaveBtn.textContent = "Saving Goals...";
+
       try {
-        await api.updateGoals({ calorie_goal: cal, protein_goal: p, carb_goal: c, fat_goal: f });
+        const res = await api.updateGoals({ calorie_goal: cal, protein_goal: p, carb_goal: c, fat_goal: f });
+        if (res.user) currentUserProfile = res.user;
         if (onboardingOverlay) onboardingOverlay.classList.add("hidden");
-        await refreshDashboard();
+        if (res.dashboard) {
+          renderDashboardData(res.dashboard);
+        } else {
+          await refreshDashboard();
+        }
       } catch (err) {
         alert("Failed to save goals: " + err.message);
+      } finally {
+        onboardSaveBtn.disabled = false;
+        onboardSaveBtn.textContent = "Save Daily Goals";
       }
     });
   }
@@ -1388,9 +1567,14 @@ document.addEventListener("DOMContentLoaded", () => {
   if (onboardSkipBtn) {
     onboardSkipBtn.addEventListener("click", async () => {
       try {
-        await api.updateGoals({ calorie_goal: 2000, protein_goal: 130, carb_goal: 220, fat_goal: 65 });
+        const res = await api.updateGoals({ calorie_goal: 2000, protein_goal: 130, carb_goal: 220, fat_goal: 65 });
+        if (res.user) currentUserProfile = res.user;
         if (onboardingOverlay) onboardingOverlay.classList.add("hidden");
-        await refreshDashboard();
+        if (res.dashboard) {
+          renderDashboardData(res.dashboard);
+        } else {
+          await refreshDashboard();
+        }
       } catch (err) {
         alert("Failed to set default goals: " + err.message);
       }
