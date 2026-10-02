@@ -1,4 +1,5 @@
 import os
+import re
 import json
 import logging
 from typing import Optional, Dict, Any, List
@@ -64,6 +65,10 @@ SEEDED_FOODS = [
     ("grilled chicken breast", "breast", 1.0, 220, 43.0, 0.0, 5.0, "poultry,lean"),
     ("salmon fillet", "fillet", 1.0, 280, 34.0, 0.0, 15.0, "fish,healthy-fats"),
     ("almonds", "handful", 1.0, 160, 6.0, 6.0, 14.0, "nuts,snack"),
+    ("milk", "glass", 1.0, 150, 8.0, 12.0, 8.0, "dairy,milk,beverage"),
+    ("whole milk", "glass", 1.0, 150, 8.0, 12.0, 8.0, "dairy,milk,beverage"),
+    ("corn pizza", "slice", 1.0, 260, 10.0, 32.0, 9.0, "pizza,corn"),
+    ("pizza", "slice", 1.0, 285, 12.0, 36.0, 10.0, "pizza,italian"),
 ]
 
 def normalize_key(name: str) -> str:
@@ -111,16 +116,13 @@ class SmartCache:
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 );
                 """)
-                cursor.execute("SELECT COUNT(*) FROM food_cache")
-                count = cursor.fetchone()[0]
-                if count == 0:
-                    for name, unit, qty, cal, p, c, f, tags in SEEDED_FOODS:
-                        key = normalize_key(name)
-                        cursor.execute("""
-                        INSERT INTO food_cache (food_key, name, serving_unit, serving_qty, calories, protein, carbs, fats, tags)
-                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
-                        ON CONFLICT (food_key) DO NOTHING
-                        """, (key, name.title(), unit, qty, cal, p, c, f, tags))
+                for name, unit, qty, cal, p, c, f, tags in SEEDED_FOODS:
+                    key = normalize_key(name)
+                    cursor.execute("""
+                    INSERT INTO food_cache (food_key, name, serving_unit, serving_qty, calories, protein, carbs, fats, tags)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    ON CONFLICT (food_key) DO NOTHING
+                    """, (key, name.title(), unit, qty, cal, p, c, f, tags))
                 conn.commit()
                 conn.close()
                 masked = DATABASE_URL.split("@")[-1] if "@" in DATABASE_URL else "PostgreSQL Target"
@@ -157,14 +159,12 @@ class SmartCache:
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
         """)
-        cursor.execute("SELECT COUNT(*) FROM food_cache")
-        if cursor.fetchone()[0] == 0:
-            for name, unit, qty, cal, p, c, f, tags in SEEDED_FOODS:
-                key = normalize_key(name)
-                cursor.execute("""
-                INSERT OR IGNORE INTO food_cache (food_key, name, serving_unit, serving_qty, calories, protein, carbs, fats, tags)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """, (key, name.title(), unit, qty, cal, p, c, f, tags))
+        for name, unit, qty, cal, p, c, f, tags in SEEDED_FOODS:
+            key = normalize_key(name)
+            cursor.execute("""
+            INSERT OR IGNORE INTO food_cache (food_key, name, serving_unit, serving_qty, calories, protein, carbs, fats, tags)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (key, name.title(), unit, qty, cal, p, c, f, tags))
         conn.commit()
         conn.close()
 
@@ -179,9 +179,26 @@ class SmartCache:
             cursor.execute(f"SELECT * FROM food_cache WHERE food_key = {param_placeholder}", (key,))
             row = cursor.fetchone()
 
-            # 2. Substring match (e.g. 'chicken curry bowl' matching 'chicken curry')
+            # 2. Singular / Plural variation match
+            if not row and key.endswith("s") and len(key) > 3:
+                cursor.execute(f"SELECT * FROM food_cache WHERE food_key = {param_placeholder}", (key.rstrip("s"),))
+                row = cursor.fetchone()
+
+            # 3. Substring match:
+            # Prefer when user search string contains the food_key (e.g. 'chicken curry bowl' matching 'chicken curry')
             if not row:
-                cursor.execute(f"SELECT * FROM food_cache WHERE food_key LIKE {param_placeholder} OR {param_placeholder} LIKE CONCAT('%%', food_key, '%%') ORDER BY LENGTH(food_key) DESC LIMIT 1", (f"%{key}%", key))
+                if self.use_postgres:
+                    cursor.execute("SELECT * FROM food_cache WHERE %s LIKE '%%' || food_key || '%%' ORDER BY LENGTH(food_key) DESC LIMIT 1", (key,))
+                else:
+                    cursor.execute("SELECT * FROM food_cache WHERE ? LIKE '%' || food_key || '%' ORDER BY LENGTH(food_key) DESC LIMIT 1", (key,))
+                row = cursor.fetchone()
+
+            # 4. If key is longer than 3 chars and not a generic food, check if food_key contains key, but order by closest length
+            if not row and len(key) >= 4 and key not in ["milk", "rice", "curry", "toast", "wrap", "cake", "diet"]:
+                if self.use_postgres:
+                    cursor.execute("SELECT * FROM food_cache WHERE food_key LIKE %s ORDER BY LENGTH(food_key) ASC LIMIT 1", (f"%{key}%",))
+                else:
+                    cursor.execute("SELECT * FROM food_cache WHERE food_key LIKE ? ORDER BY LENGTH(food_key) ASC LIMIT 1", (f"%{key}%",))
                 row = cursor.fetchone()
 
             if row:
@@ -192,6 +209,13 @@ class SmartCache:
 
                 base_qty = row_dict["serving_qty"] or 1.0
                 scale = quantity / base_qty if base_qty > 0 else quantity
+
+                # Check if unit has a metric scale (e.g. "500ml", "250ml") when base is glass/cup/250ml
+                if unit and row_dict.get("serving_unit") in ["glass", "cup", "250ml"] and ("ml" in str(unit).lower()):
+                    m_ml = re.search(r'(\d+(?:\.\d+)?)\s*ml', str(unit), re.I)
+                    if m_ml:
+                        ml_val = float(m_ml.group(1))
+                        scale = scale * (ml_val / 250.0)
 
                 return {
                     "name": row_dict["name"],

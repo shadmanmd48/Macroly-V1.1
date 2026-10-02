@@ -429,7 +429,7 @@ class AIInterpreter:
         cleaned = re.sub(r'^(?:i\s+had|i\s+ate|had|ate|logged|log|having|eating)\s+', '', text_lower)
         cleaned = re.sub(r'\s+for\s+(?:breakfast|lunch|dinner|snack).*$', '', cleaned)
         
-        segments = re.split(r'\s+(?:with|and|&)\s+|,\s*', cleaned)
+        segments = re.split(r'\s+(?:with|and|&|\+)\s+|,\s*|\s*;\s*', cleaned)
         
         items: List[FoodItem] = []
         for seg in segments:
@@ -479,14 +479,15 @@ class AIInterpreter:
             system_prompt = (
                 "You are an expert nutritional food parser. "
                 "Analyze the user's food log message and extract all individual food items, their numerical quantities, "
-                "and standard serving units (e.g. piece, slice, bowl, cup, glass, plate, gram, scoop, serving). "
+                "and standard serving units (e.g. piece, slice, bowl, cup, glass, plate, gram, scoop, serving, or explicit portion like 250ml). "
+                "CRITICAL: Each food item must strictly get its own independent quantity from its own phrase. Do NOT assign or inherit quantities across items. If an item has a volume/weight like '250ml milk', quantity should be 1 and unit should be '250ml'. "
                 "Also identify the overall meal_type (Breakfast, Lunch, Dinner, or Snack). "
                 "You must return ONLY a valid JSON object matching this exact schema with no extra text or markdown formatting:\n"
                 '{"items": [{"name": "string", "quantity": number, "unit": "string"}], "meal_type": "string"}'
             )
 
             # Primary model available on Groq with fallbacks
-            candidate_models = ["openai/gpt-oss-120b", "openai/gpt-oss-20b", "qwen/qwen3.8-27b", "llama-3.3-70b-versatile"]
+            candidate_models = ["openai/gpt-oss-120b", "openai/gpt-oss-20b", "qwen/qwen3.8-27b"]
             completion = None
             for model_name in candidate_models:
                 try:
@@ -646,48 +647,87 @@ class AIInterpreter:
 
     def _parse_single_item(self, text: str) -> Optional[FoodItem]:
         text = text.strip()
-        tokens = text.split()
-        if not tokens:
+        if not text:
             return None
+
+        # Clean conversational noise prefix within segment
+        seg = re.sub(r'^(?:a\s+couple\s+of|a\s+few|a\s+plate\s+of|a\s+serving\s+of|a\s+glass\s+of|a\s+cup\s+of|a\s+bowl\s+of|some|also|just)\s+', '', text, flags=re.I).strip()
+        if not seg:
+            seg = text
 
         qty = 1.0
         unit = "serving"
-        food_tokens = tokens[:]
+        food_name = seg
 
-        # Check leading quantity (e.g., "2", "2x", "a", "one")
-        m_qty = re.match(r'^(\d+(?:\.\d+)?)(?:x)?$', tokens[0])
-        if m_qty:
-            qty = float(m_qty.group(1))
-            food_tokens = tokens[1:]
-        elif tokens[0] in NUMBER_WORDS:
-            qty = float(NUMBER_WORDS[tokens[0]])
-            food_tokens = tokens[1:]
+        # 1. Check for explicit unit pattern: e.g. "1 unit of 250ml milk", "2 units of 250ml milk"
+        m_explicit_unit = re.match(r'^(\d+(?:\.\d+)?)\s*(?:unit|units|serving|servings|portion|portions)\s+of\s+(\d+(?:\.\d+)?\s*(?:ml|g|grams?|oz|kg|litres?|liters?|l))\s+(?:of\s+)?(.+)$', seg, re.I)
+        if m_explicit_unit:
+            qty = float(m_explicit_unit.group(1))
+            unit = m_explicit_unit.group(2).replace(" ", "").lower()
+            food_name = m_explicit_unit.group(3).strip()
+        else:
+            # 2. Check for direct metric volume/weight: e.g. "250ml milk", "250 ml milk", "250ml of milk", "100g chicken"
+            m_metric = re.match(r'^(\d+(?:\.\d+)?)\s*(ml|g|grams?|oz|kg|litres?|liters?|l)\b(?:\s+of)?\s+(.+)$', seg, re.I)
+            if m_metric:
+                val = float(m_metric.group(1))
+                u = m_metric.group(2).lower()
+                qty = 1.0
+                unit = f"{int(val) if val.is_integer() else val}{u}"
+                food_name = m_metric.group(3).strip()
+            else:
+                # 3. Check for count + metric: e.g. "2 x 250ml milk", "2 250ml milk"
+                m_count_metric = re.match(r'^(\d+(?:\.\d+)?)(?:\s*x)?\s+(\d+(?:\.\d+)?\s*(?:ml|g|grams?|oz|kg|litres?|liters?|l))\s+(?:of\s+)?(.+)$', seg, re.I)
+                if m_count_metric:
+                    qty = float(m_count_metric.group(1))
+                    unit = m_count_metric.group(2).replace(" ", "").lower()
+                    food_name = m_count_metric.group(3).strip()
+                else:
+                    # 4. Standard tokens: [count] [unit] [of] [food]
+                    tokens = seg.split()
+                    lead_qty = None
+                    food_tokens = tokens[:]
 
-        # Check unit (e.g., "bowl of", "slice of", "cups")
-        if food_tokens and food_tokens[0] in UNIT_WORDS:
-            unit = food_tokens[0]
-            food_tokens = food_tokens[1:]
-            if food_tokens and food_tokens[0] == "of":
-                food_tokens = food_tokens[1:]
+                    # Check leading count (e.g. "2", "2x", "a", "one")
+                    m_qty = re.match(r'^(\d+(?:\.\d+)?)(?:x)?$', tokens[0])
+                    if m_qty:
+                        lead_qty = float(m_qty.group(1))
+                        food_tokens = tokens[1:]
+                    elif tokens[0].lower() in NUMBER_WORDS:
+                        lead_qty = float(NUMBER_WORDS[tokens[0].lower()])
+                        food_tokens = tokens[1:]
 
-        food_name = " ".join(food_tokens).strip()
-        if not food_name:
-            food_name = text
+                    if lead_qty is not None:
+                        qty = lead_qty
+                    else:
+                        qty = 1.0
 
-        nut = nutrition_service.get_nutrition(food_name, qty, unit)
+                    # Check unit (e.g. "bowl", "slice", "glass", "cup", "rotis", "pieces")
+                    if food_tokens and food_tokens[0].lower() in UNIT_WORDS:
+                        unit = food_tokens[0].lower()
+                        food_tokens = food_tokens[1:]
+                        if food_tokens and food_tokens[0].lower() == "of":
+                            food_tokens = food_tokens[1:]
 
-        display_name = nut.get("name", food_name.title())
-        if "roti" in food_name.lower() and "whole wheat" in text.lower():
+                    food_name = " ".join(food_tokens).strip()
+                    if not food_name:
+                        food_name = seg
+
+        food_name_clean = food_name.strip()
+        nut = nutrition_service.get_nutrition(food_name_clean, qty, unit)
+
+        resolved_unit = unit if unit not in ["serving", "item"] else nut.get("unit", unit)
+        display_name = nut.get("name", food_name_clean.title())
+        if "roti" in food_name_clean.lower() and "whole wheat" in text.lower():
             display_name = "Whole Wheat Roti"
-        elif "chicken curry" in food_name.lower():
+        elif "chicken curry" in food_name_clean.lower():
             display_name = "Chicken Curry Bowl"
-        elif "cucumber" in food_name.lower():
+        elif "cucumber" in food_name_clean.lower():
             display_name = "Cucumber Salad"
 
         return FoodItem(
             name=display_name,
             quantity=qty,
-            unit=nut.get("unit", unit),
+            unit=resolved_unit,
             calories=nut["calories"],
             protein=nut["protein"],
             carbs=nut["carbs"],

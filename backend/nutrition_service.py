@@ -29,121 +29,75 @@ FOOD_CATEGORY_HEURISTICS = {
     "tea": {"cal": 25, "p": 0.5, "c": 4.0, "f": 0.5, "unit": "cup"},
     "egg": {"cal": 75, "p": 6.3, "c": 0.5, "f": 5.0, "unit": "egg"},
     "fruit": {"cal": 80, "p": 1.0, "c": 20.0, "f": 0.2, "unit": "item"},
+    "milk": {"cal": 150, "p": 8.0, "c": 12.0, "f": 8.0, "unit": "glass"},
+    "corn pizza": {"cal": 260, "p": 10.0, "c": 32.0, "f": 9.0, "unit": "slice"},
 }
 
 class NutritionService:
     def __init__(self):
-        self.fatsecret_client_id = os.getenv("FATSECRET_CLIENT_ID", "").strip()
-        self.fatsecret_client_secret = os.getenv("FATSECRET_CLIENT_SECRET", "").strip()
-        self._access_token: Optional[str] = None
-        self._token_expires_at: float = 0.0
+        self.calorieninjas_api_key = os.getenv("CALORIENINJAS_API_KEY", "").strip()
 
-    def _get_access_token(self) -> Optional[str]:
-        """Obtains or reuses an OAuth2 client credentials token from FatSecret."""
-        if not self.fatsecret_client_id or not self.fatsecret_client_secret:
+    def _fetch_calorieninjas(self, food_name: str, quantity: float = 1.0, unit: str = "serving") -> Optional[Dict[str, Any]]:
+        """Queries CalorieNinjas API and parses nutritional macros."""
+        api_key = self.calorieninjas_api_key or os.getenv("CALORIENINJAS_API_KEY", "").strip()
+        if not api_key:
             return None
 
-        # Return valid cached token if available
-        if self._access_token and time.time() < (self._token_expires_at - 60):
-            return self._access_token
-
         try:
-            token_url = "https://oauth.fatsecret.com/connect/token"
-            resp = requests.post(
-                token_url,
-                auth=(self.fatsecret_client_id, self.fatsecret_client_secret),
-                data={"grant_type": "client_credentials", "scope": "basic"},
-                timeout=8
-            )
-            if resp.status_code == 200:
-                data = resp.json()
-                self._access_token = data.get("access_token")
-                expires_in = data.get("expires_in", 86400)
-                self._token_expires_at = time.time() + expires_in
-                return self._access_token
+            clean_unit = (unit or "serving").lower().strip()
+            # If unit is metric ml (e.g. 250ml), convert to grams for CalorieNinjas (e.g. 250g)
+            if "ml" in clean_unit:
+                m_ml = re.search(r'(\d+(?:\.\d+)?)', clean_unit)
+                if m_ml:
+                    total_g = float(m_ml.group(1)) * quantity
+                    query = f"{int(total_g) if total_g.is_integer() else total_g}g {food_name}"
+                else:
+                    query = f"{quantity} glass {food_name}"
+            elif clean_unit in ["serving", "item", ""]:
+                qty_str = f"{int(quantity) if quantity.is_integer() else quantity}"
+                query = f"{qty_str} {food_name}"
             else:
-                logger.warning("FatSecret OAuth token request failed (HTTP %s): %s", resp.status_code, resp.text)
-                return None
-        except Exception as e:
-            logger.warning("FatSecret OAuth token network error: %s", e)
-            return None
+                qty_str = f"{int(quantity) if quantity.is_integer() else quantity}"
+                query = f"{qty_str} {clean_unit} {food_name}"
 
-    def _fetch_fatsecret(self, food_name: str, quantity: float = 1.0, unit: str = "serving") -> Optional[Dict[str, Any]]:
-        """Queries FatSecret foods.search endpoint and parses nutritional macros."""
-        token = self._get_access_token()
-        if not token:
-            return None
-
-        try:
-            api_url = "https://platform.fatsecret.com/rest/server.api"
-            headers = {"Authorization": f"Bearer {token}"}
-            params = {
-                "method": "foods.search",
-                "search_expression": food_name,
-                "format": "json"
-            }
-            resp = requests.post(api_url, headers=headers, data=params, timeout=8)
+            api_url = "https://api.calorieninjas.com/v1/nutrition"
+            headers = {"X-Api-Key": api_key}
+            resp = requests.get(api_url, headers=headers, params={"query": query}, timeout=8)
             if resp.status_code != 200:
-                logger.warning("FatSecret API query returned HTTP %s for '%s'", resp.status_code, food_name)
+                logger.warning("CalorieNinjas API query returned HTTP %s for '%s'", resp.status_code, query)
                 return None
 
             data = resp.json()
-            if "error" in data:
-                err = data["error"]
-                logger.warning("FatSecret API error for '%s': %s (code %s)", food_name, err.get("message"), err.get("code"))
+            items = data.get("items", [])
+            # Fallback to plain food_name query if compound query returned 0 items
+            if not items and query != food_name:
+                resp_plain = requests.get(api_url, headers=headers, params={"query": food_name}, timeout=8)
+                if resp_plain.status_code == 200:
+                    data = resp_plain.json()
+                    items = data.get("items", [])
+
+            if not items:
+                logger.info("CalorieNinjas returned 0 results for '%s'", query)
                 return None
 
-            foods = data.get("foods", {}).get("food", [])
-            if isinstance(foods, dict):
-                foods = [foods]
-            if not foods:
-                logger.info("FatSecret returned 0 results for '%s'", food_name)
-                return None
-
-            # Find best match: prioritize exact name match, otherwise take the first sensible result
-            chosen = foods[0]
-            clean_input = food_name.lower().strip()
-            for f in foods:
-                if f.get("food_name", "").lower().strip() == clean_input:
-                    # Prefer standard portions if available
-                    desc = f.get("food_description", "")
-                    cal_m = re.search(r"Calories:\s*([0-9.]+)", desc, re.I)
-                    if cal_m and float(cal_m.group(1)) < 1500:
-                        chosen = f
-                        break
-
-            desc = chosen.get("food_description", "")
-            cal_m = re.search(r"Calories:\s*([0-9.]+)", desc, re.I)
-            fat_m = re.search(r"Fat:\s*([0-9.]+)g?", desc, re.I)
-            carb_m = re.search(r"Carbs:\s*([0-9.]+)g?", desc, re.I)
-            prot_m = re.search(r"Protein:\s*([0-9.]+)g?", desc, re.I)
-            serv_m = re.search(r"Per\s+([^-|]+)", desc, re.I)
-
-            if not cal_m:
-                logger.warning("Unable to parse calories from FatSecret description: %s", desc)
-                return None
-
-            base_cal = float(cal_m.group(1))
-            base_fat = float(fat_m.group(1)) if fat_m else 0.0
-            base_carbs = float(carb_m.group(1)) if carb_m else 0.0
-            base_protein = float(prot_m.group(1)) if prot_m else 0.0
-            parsed_serving = serv_m.group(1).strip() if serv_m else "serving"
+            tot_cal = sum(float(i.get("calories", 0.0)) for i in items)
+            tot_p = sum(float(i.get("protein_g", 0.0)) for i in items)
+            tot_c = sum(float(i.get("carbohydrates_total_g", 0.0)) for i in items)
+            tot_f = sum(float(i.get("fat_total_g", 0.0)) for i in items)
 
             return {
-                "name": chosen.get("food_name", food_name).title(),
+                "name": food_name.title(),
                 "quantity": quantity,
-                "unit": unit or parsed_serving,
-                "calories": int(round(base_cal * quantity)),
-                "protein": round(base_protein * quantity, 1),
-                "carbs": round(base_carbs * quantity, 1),
-                "fats": round(base_fat * quantity, 1),
+                "unit": unit or "serving",
+                "calories": int(round(tot_cal)),
+                "protein": round(tot_p, 1),
+                "carbs": round(tot_c, 1),
+                "fats": round(tot_f, 1),
                 "cached": False,
-                "source": "FatSecret API",
-                "raw_description": desc,
-                "brand": chosen.get("brand_name")
+                "source": "CalorieNinjas API"
             }
         except Exception as e:
-            logger.warning("Exception during FatSecret API call for '%s': %s", food_name, e)
+            logger.warning("Exception during CalorieNinjas API call for '%s': %s", food_name, e)
             return None
 
     def _resolve_heuristic_or_estimate(self, food_name: str, quantity: float, unit: str) -> Dict[str, Any]:
@@ -189,8 +143,8 @@ class NutritionService:
     def get_nutrition(self, food_name: str, quantity: float = 1.0, unit: str = "serving") -> Dict[str, Any]:
         """
         1. Check local Smart Cache first.
-        2. If missed, query live FatSecret API.
-        3. If FatSecret fails/misses, fallback to heuristic catalog.
+        2. If missed, query live CalorieNinjas API.
+        3. If CalorieNinjas fails/misses, fallback to heuristic catalog.
         4. Save resolved nutrition to Smart Cache for instant future lookups.
         """
         # Step 1: Check smart_cache
@@ -201,12 +155,11 @@ class NutritionService:
             cached["source"] = "Smart Cache"
             return cached
 
-        # Step 2: Attempt live FatSecret API
-        nutrition = self._fetch_fatsecret(food_name, quantity, unit)
+        # Step 2: Attempt live CalorieNinjas API
+        nutrition = self._fetch_calorieninjas(food_name, quantity, unit)
         if nutrition:
-            logger.info("🔵 [FATSECRET API] '%s' (qty: %s %s) -> %d kcal, %sg P, %sg C, %sg F (serving: %s, raw: %s)",
-                        food_name, quantity, unit, nutrition["calories"], nutrition["protein"], nutrition["carbs"], nutrition["fats"],
-                        nutrition["unit"], nutrition.get("raw_description"))
+            logger.info("🔵 [CALORIENINJAS API] '%s' (qty: %s %s) -> %d kcal, %sg P, %sg C, %sg F",
+                        food_name, quantity, unit, nutrition["calories"], nutrition["protein"], nutrition["carbs"], nutrition["fats"])
         else:
             # Step 3: Heuristic / Estimator Fallback
             nutrition = self._resolve_heuristic_or_estimate(food_name, quantity, unit)
