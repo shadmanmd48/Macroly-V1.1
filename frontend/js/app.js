@@ -186,7 +186,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const editProfileBtn = document.getElementById("editProfileBtn");
   const appearanceSubLabel = document.getElementById("appearanceSubLabel");
 
-  function applyTheme(isDark) {
+  function applyTheme(isDark, save = true) {
     const slider = themeToggleSwitch ? themeToggleSwitch.querySelector(".clay-toggle-slider") : null;
     if (isDark) {
       document.documentElement.setAttribute("data-theme", "dark");
@@ -201,16 +201,24 @@ document.addEventListener("DOMContentLoaded", () => {
       if (slider) slider.style.transform = "translateX(0px)";
       if (appearanceSubLabel) appearanceSubLabel.textContent = "Soft Clay Light Mode";
     }
-    localStorage.setItem("macroly_theme", isDark ? "dark" : "light");
+    if (save) {
+      localStorage.setItem("macroly_theme_manual", isDark ? "dark" : "light");
+    }
   }
 
-  const savedTheme = localStorage.getItem("macroly_theme");
-  let isCurrentDark = savedTheme === "dark" || (!savedTheme && window.matchMedia("(prefers-color-scheme: dark)").matches);
-  applyTheme(isCurrentDark);
+  // Default appearance is light mode only when someone opens the app
+  let isCurrentDark = false;
+  const manualTheme = localStorage.getItem("macroly_theme_manual");
+  if (manualTheme === "dark") {
+    isCurrentDark = true;
+  }
+  // Clear legacy auto-saved theme
+  localStorage.removeItem("macroly_theme");
+  applyTheme(isCurrentDark, false);
 
   function toggleTheme() {
     isCurrentDark = !isCurrentDark;
-    applyTheme(isCurrentDark);
+    applyTheme(isCurrentDark, true);
   }
 
   if (themeToggleSwitch) {
