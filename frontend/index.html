@@ -49,8 +49,8 @@
           <span class="brand-screen-name" id="currentScreenTitle">Ai Nutrition Logger</span>
         </div>
       </div>
-      <div class="header-user-avatar" id="avatarBtn" title="Elena's Profile">
-        <img src="/static/assets/avatar.jpg" alt="Elena">
+      <div class="header-user-avatar" id="avatarBtn" title="Profile & Settings">
+        <img src="/static/assets/avatar.jpg" alt="Profile" id="headerAvatarImg">
       </div>
     </header>
 
@@ -58,7 +58,7 @@
     <main class="screen-content">
 
       <!-- ================= 1. DASHBOARD VIEW ================= -->
-      <section class="screen-view" id="dashboardView">
+      <section class="screen-view active" id="dashboardView">
         <div class="greeting-section">
           <div class="greeting-text">
             <h1 id="userGreeting">Good morning,<br>Elena 👋</h1>
@@ -94,41 +94,85 @@
           </div>
         </div>
 
-        <!-- 3 Macro Cards Row -->
+        <!-- 3 Macro Cards Row with Visual Icons -->
         <div class="macro-cards-row">
-          <!-- Protein -->
+          <!-- Protein Card -->
           <div class="macro-mini-card">
-            <svg class="mini-ring-svg" viewBox="0 0 40 40">
-              <circle class="mini-ring-track" cx="20" cy="20" r="16" />
-              <circle class="mini-ring-progress" id="proteinRing" cx="20" cy="20" r="16" stroke="url(#proteinGrad)"
-                stroke-dasharray="100.5" stroke-dashoffset="22" />
-            </svg>
+            <div class="macro-ring-wrapper">
+              <svg class="mini-ring-svg" viewBox="0 0 40 40">
+                <defs>
+                  <linearGradient id="pGradDirect" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#34d399" />
+                    <stop offset="100%" stop-color="#10b981" />
+                  </linearGradient>
+                </defs>
+                <circle class="mini-ring-track" cx="20" cy="20" r="16" />
+                <circle class="mini-ring-progress" id="proteinRing" cx="20" cy="20" r="16" stroke="url(#pGradDirect)"
+                  stroke-dasharray="100.5" stroke-dashoffset="22" />
+              </svg>
+              <div class="macro-center-icon protein-icon" title="Protein">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M15.5 3.5a4.24 4.24 0 0 1 6 6l-3.5 3.5a4.24 4.24 0 0 1-6 0L8.5 9.5a4.24 4.24 0 0 1 0-6l1-1a4.24 4.24 0 0 1 6 1z"/>
+                  <path d="m8.5 9.5-3.5 3.5a3 3 0 0 0-1 4.5l.5.5a3 3 0 0 0 4.5-1l3.5-3.5"/>
+                </svg>
+              </div>
+            </div>
             <span class="macro-name">Protein</span>
             <span class="macro-values"><span id="pVal">110</span><span class="macro-target-dim">/<span
                   id="pTarget">140</span>g</span></span>
             <span class="macro-percent-tag" id="pPct">78%</span>
           </div>
 
-          <!-- Carbs -->
+          <!-- Carbs Card -->
           <div class="macro-mini-card">
-            <svg class="mini-ring-svg" viewBox="0 0 40 40">
-              <circle class="mini-ring-track" cx="20" cy="20" r="16" />
-              <circle class="mini-ring-progress" id="carbsRing" cx="20" cy="20" r="16" stroke="url(#carbsGrad)"
-                stroke-dasharray="100.5" stroke-dashoffset="25" />
-            </svg>
+            <div class="macro-ring-wrapper">
+              <svg class="mini-ring-svg" viewBox="0 0 40 40">
+                <defs>
+                  <linearGradient id="cGradDirect" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#fbbf24" />
+                    <stop offset="100%" stop-color="#f59e0b" />
+                  </linearGradient>
+                </defs>
+                <circle class="mini-ring-track" cx="20" cy="20" r="16" />
+                <circle class="mini-ring-progress" id="carbsRing" cx="20" cy="20" r="16" stroke="url(#cGradDirect)"
+                  stroke-dasharray="100.5" stroke-dashoffset="25" />
+              </svg>
+              <div class="macro-center-icon carbs-icon" title="Carbs">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M2 22 16 8"/>
+                  <path d="M3.47 12.53 5 11l1.53 1.53a3.5 3.5 0 0 1 0 4.94L5 19l-1.53-1.53a3.5 3.5 0 0 1 0-4.94Z"/>
+                  <path d="M7.47 8.53 9 7l1.53 1.53a3.5 3.5 0 0 1 0 4.94L9 15l-1.53-1.53a3.5 3.5 0 0 1 0-4.94Z"/>
+                  <path d="M11.47 4.53 13 3l1.53 1.53a3.5 3.5 0 0 1 0 4.94L13 11l-1.53-1.53a3.5 3.5 0 0 1 0-4.94Z"/>
+                  <path d="M20 2h2v2a4 4 0 0 1-4 4h-2V6a4 4 0 0 1 4-4Z"/>
+                </svg>
+              </div>
+            </div>
             <span class="macro-name">Carbs</span>
             <span class="macro-values"><span id="cVal">165</span><span class="macro-target-dim">/<span
                   id="cTarget">220</span>g</span></span>
             <span class="macro-percent-tag" id="cPct">75%</span>
           </div>
 
-          <!-- Fats -->
+          <!-- Fats Card -->
           <div class="macro-mini-card">
-            <svg class="mini-ring-svg" viewBox="0 0 40 40">
-              <circle class="mini-ring-track" cx="20" cy="20" r="16" />
-              <circle class="mini-ring-progress" id="fatsRing" cx="20" cy="20" r="16" stroke="url(#fatsGrad)"
-                stroke-dasharray="100.5" stroke-dashoffset="36" />
-            </svg>
+            <div class="macro-ring-wrapper">
+              <svg class="mini-ring-svg" viewBox="0 0 40 40">
+                <defs>
+                  <linearGradient id="fGradDirect" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#60a5fa" />
+                    <stop offset="100%" stop-color="#3b82f6" />
+                  </linearGradient>
+                </defs>
+                <circle class="mini-ring-track" cx="20" cy="20" r="16" />
+                <circle class="mini-ring-progress" id="fatsRing" cx="20" cy="20" r="16" stroke="url(#fGradDirect)"
+                  stroke-dasharray="100.5" stroke-dashoffset="36" />
+              </svg>
+              <div class="macro-center-icon fats-icon" title="Fats">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/>
+                </svg>
+              </div>
+            </div>
             <span class="macro-name">Fats</span>
             <span class="macro-values"><span id="fVal">42</span><span class="macro-target-dim">/<span
                   id="fTarget">65</span>g</span></span>
@@ -142,7 +186,7 @@
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
               <path d="M20 6L9 17l-5-5" />
             </svg>
-            Synced with Apple Health
+            Daily Tracker Active
           </span>
         </div>
 
@@ -276,77 +320,104 @@
         </div>
       </section>
 
-      <!-- ================= 3. STATS VIEW ================= -->
+      <!-- ================= 3. STATS VIEW (FULL CALENDAR & ADHERENCE) ================= -->
       <section class="screen-view" id="statsView">
         <div class="greeting-section">
           <div class="greeting-text">
-            <h1>Weekly Stats &<br>Adherence</h1>
-            <div class="greeting-date">PAST 7 DAYS PERFORMANCE</div>
+            <h1>Weekly Stats &<br>Adherence Calendar</h1>
+            <div class="greeting-date" id="statsSubDate">OCTOBER 2026 • CONSISTENCY TRACKER</div>
+          </div>
+          <button class="stats-today-pill" id="calendarTodayBtn">Today</button>
+        </div>
+
+        <!-- Full Interactive Calendar Card -->
+        <div class="calendar-card">
+          <div class="calendar-header-bar">
+            <button class="cal-nav-btn" id="calPrevMonthBtn" title="Previous Month">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="15 18 9 12 15 6" />
+              </svg>
+            </button>
+            <div class="cal-month-title" id="calCurrentMonthTitle">October 2026</div>
+            <button class="cal-nav-btn" id="calNextMonthBtn" title="Next Month">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="9 18 15 12 9 6" />
+              </svg>
+            </button>
+          </div>
+          <div class="cal-weekdays-row">
+            <span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span>
+          </div>
+          <div class="cal-days-grid" id="calendarDaysGrid">
+            <!-- Dynamically populated by JS -->
           </div>
         </div>
 
-        <div class="calorie-gauge-card" style="align-items: flex-start;">
-          <h3 style="font-size: 15px; font-weight: 800; margin-bottom: 12px;">Calorie Target Consistency</h3>
-          <div
-            style="display: flex; justify-content: space-between; width: 100%; align-items: flex-end; height: 140px; padding: 10px 0;">
-            <div style="display:flex; flex-direction:column; align-items:center; gap:6px;">
-              <div style="width:24px; height:90px; background:var(--primary); border-radius:6px;"></div>
-              <span style="font-size:11px; font-weight:700; color:var(--text-muted);">M</span>
+        <!-- Selected Day Inspector Card -->
+        <div class="selected-day-card" id="selectedDayCard">
+          <div class="selected-day-header">
+            <div class="selected-day-date-info">
+              <span class="selected-day-badge">Selected Date</span>
+              <h3 class="selected-day-title" id="selectedDayTitle">Today, Oct 3</h3>
             </div>
-            <div style="display:flex; flex-direction:column; align-items:center; gap:6px;">
-              <div style="width:24px; height:110px; background:var(--primary); border-radius:6px;"></div>
-              <span style="font-size:11px; font-weight:700; color:var(--text-muted);">T</span>
-            </div>
-            <div style="display:flex; flex-direction:column; align-items:center; gap:6px;">
-              <div style="width:24px; height:100px; background:var(--primary); border-radius:6px;"></div>
-              <span style="font-size:11px; font-weight:700; color:var(--text-muted);">W</span>
-            </div>
-            <div style="display:flex; flex-direction:column; align-items:center; gap:6px;">
-              <div
-                style="width:24px; height:125px; background:var(--primary); border-radius:6px; box-shadow:0 4px 10px var(--primary-glow);">
+            <span class="selected-day-cals-pill" id="selectedDayCalsPill">1,450 / 2,200 kcal</span>
+          </div>
+          <div class="selected-day-prog-track">
+            <div class="selected-day-prog-fill" id="selectedDayProgFill" style="width: 66%;"></div>
+          </div>
+          <div class="selected-day-macro-chips">
+            <div class="macro-chip protein"><span class="chip-dot dot-protein"></span><span id="selDayP">110g P</span></div>
+            <div class="macro-chip carbs"><span class="chip-dot dot-carb"></span><span id="selDayC">165g C</span></div>
+            <div class="macro-chip fats"><span class="chip-dot dot-fat"></span><span id="selDayF">42g F</span></div>
+          </div>
+          <div class="selected-day-meals-preview" id="selectedDayMealsList">
+            <!-- Meals list for selected day rendered dynamically -->
+          </div>
+        </div>
+
+        <!-- Weekly Performance & Adherence Bar Chart -->
+        <div class="weekly-streak-card">
+          <div class="streak-header-row">
+            <div class="streak-title-box">
+              <span class="streak-fire-icon">🔥</span>
+              <div>
+                <div class="streak-count" id="statsStreakDays">5-Day Logging Streak</div>
+                <div class="streak-sub">Daily target met 6 of 7 days</div>
               </div>
-              <span style="font-size:11px; font-weight:800; color:var(--primary);">T</span>
             </div>
-            <div style="display:flex; flex-direction:column; align-items:center; gap:6px;">
-              <div style="width:24px; height:80px; background:#d4e5da; border-radius:6px;"></div>
-              <span style="font-size:11px; font-weight:700; color:var(--text-muted);">F</span>
-            </div>
-            <div style="display:flex; flex-direction:column; align-items:center; gap:6px;">
-              <div style="width:24px; height:70px; background:#d4e5da; border-radius:6px;"></div>
-              <span style="font-size:11px; font-weight:700; color:var(--text-muted);">S</span>
-            </div>
-            <div style="display:flex; flex-direction:column; align-items:center; gap:6px;">
-              <div style="width:24px; height:60px; background:#d4e5da; border-radius:6px;"></div>
-              <span style="font-size:11px; font-weight:700; color:var(--text-muted);">S</span>
-            </div>
+            <span class="streak-score-pill">86% Adherence</span>
+          </div>
+          <div class="weekly-bars-container" id="weeklyBarsContainer">
+            <!-- Dynamic 7-day consistency bars -->
           </div>
         </div>
 
+        <!-- AI Nutrition Summary -->
         <div class="macro-mini-card" style="align-items:flex-start; text-align:left; padding: 18px;">
-          <h4 style="font-size:14px; font-weight:800; margin-bottom: 6px;">AI Nutrition Summary</h4>
+          <h4 style="font-size:14px; font-weight:800; margin-bottom: 6px; color:var(--text-main);">AI Consistency Insight</h4>
           <p style="font-size:12.5px; color:var(--text-muted); line-height: 1.5;">
-            Protein goal reached 6 out of 7 days this week. Smart caching saved 14 external API calls today,
-            accelerating response speeds to &lt;45ms.
+            Protein target hit consistently on 6 of the last 7 tracked days. Nutrient distribution is optimal with steady energy expenditure.
           </p>
         </div>
       </section>
 
       <!-- ================= 4. PROFILE VIEW ================= -->
-      <section class="screen-view active" id="profileView">
+      <section class="screen-view" id="profileView">
 
         <!-- 1. Top Hero Profile Card -->
         <div class="clay-profile-card">
           <div class="clay-avatar-container">
-            <div class="clay-avatar-ring">
-              <img src="/static/assets/avatar.jpg" alt="Elena Rostova" class="clay-avatar-image">
+            <div class="clay-avatar-ring" id="profileAvatarRing" title="Click to upload profile photo">
+              <img src="/static/assets/avatar.jpg" alt="User Profile" class="clay-avatar-image" id="profileAvatarImg">
             </div>
-            <button class="clay-avatar-edit-badge" id="editProfileBtn" title="Edit Profile">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"
+            <button class="clay-avatar-edit-badge" id="editAvatarBtn" title="Upload new photo">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
                 stroke-linecap="round" stroke-linejoin="round">
-                <path d="M12 20h9" />
-                <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                <circle cx="12" cy="13" r="4"/>
               </svg>
             </button>
+            <input type="file" id="avatarFileInput" accept="image/*" style="display:none;">
           </div>
 
           <h2 class="clay-profile-title" id="profileDisplayName">Elena Rostova</h2>
@@ -463,7 +534,7 @@
 
         <!-- 3. CONNECTED APPS Section -->
         <div class="clay-group-section">
-          <div class="clay-group-title">CONNECTED APPS</div>
+          <div class="clay-group-title">CONNECTED APPS & WEARABLES</div>
           <div class="clay-card-wrapper">
             <!-- Apple Health -->
             <div class="clay-item-row">
@@ -476,18 +547,11 @@
                 </div>
                 <div class="clay-item-details">
                   <div class="clay-item-name">Apple Health</div>
-                  <div class="clay-item-meta sync-active">
-                    <span class="sync-dot-green"></span> Synced 5m ago
-                  </div>
+                  <div class="clay-item-meta">Biometric & activity sync</div>
                 </div>
               </div>
               <div class="clay-item-right">
-                <span class="clay-active-badge">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-                    <polyline points="20 6 9 17 4 12" />
-                  </svg>
-                  Active
-                </span>
+                <span class="clay-future-badge">Coming in v2.0</span>
               </div>
             </div>
 
@@ -504,16 +568,11 @@
                 </div>
                 <div class="clay-item-details">
                   <div class="clay-item-name">Smart Scale (Withings)</div>
-                  <div class="clay-item-meta">Weight & Body Fat Auto-sync</div>
+                  <div class="clay-item-meta">Body fat & weight auto-sync</div>
                 </div>
               </div>
               <div class="clay-item-right">
-                <span class="clay-active-badge">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-                    <polyline points="20 6 9 17 4 12" />
-                  </svg>
-                  Active
-                </span>
+                <span class="clay-future-badge">Future Update</span>
               </div>
             </div>
 
@@ -528,11 +587,11 @@
                 </div>
                 <div class="clay-item-details">
                   <div class="clay-item-name">Strava Workouts</div>
-                  <div class="clay-item-meta">Import burned calories</div>
+                  <div class="clay-item-meta">Import external calorie burn</div>
                 </div>
               </div>
               <div class="clay-item-right">
-                <button class="clay-connect-btn" id="connectStravaBtn">Connect</button>
+                <span class="clay-future-badge">Future Update</span>
               </div>
             </div>
           </div>

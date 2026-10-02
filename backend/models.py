@@ -91,6 +91,7 @@ class UserProfile(BaseModel):
     protein_goal: float = 130.0
     carb_goal: float = 220.0
     fat_goal: float = 65.0
+    avatar_url: Optional[str] = None
     is_onboarded: bool = False
 
 class UpdateGoalsRequest(BaseModel):
@@ -99,4 +100,8 @@ class UpdateGoalsRequest(BaseModel):
     carb_goal: float = 220.0
     fat_goal: float = 65.0
     display_name: Optional[str] = None
+    avatar_url: Optional[str] = None
+
+class UpdateAvatarRequest(BaseModel):
+    avatar_url: str
 

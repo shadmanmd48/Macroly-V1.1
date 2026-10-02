@@ -96,13 +96,14 @@ def verify_supabase_token(token: str) -> UserProfile:
     email = payload.get("email", "")
     metadata = payload.get("user_metadata") or {}
     display_name = metadata.get("name") or metadata.get("full_name")
+    avatar_url = metadata.get("avatar_url") or metadata.get("picture")
     if not display_name and email:
         display_name = email.split("@")[0].capitalize()
     if not display_name:
         display_name = "User"
 
     # Fetch or create user in Macroly's database
-    user_profile = data_store.get_or_create_user(user_id=user_id, email=email, display_name=display_name)
+    user_profile = data_store.get_or_create_user(user_id=user_id, email=email, display_name=display_name, avatar_url=avatar_url)
     _TOKEN_CACHE[token] = (user_profile, now + CACHE_TTL_SECONDS)
     return user_profile
 

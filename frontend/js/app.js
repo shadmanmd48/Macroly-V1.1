@@ -83,10 +83,38 @@ document.addEventListener("DOMContentLoaded", () => {
   const profileEmail = document.getElementById("profileEmail");
   const userGreeting = document.getElementById("userGreeting");
 
+  // Avatar and user profile references
+  const headerAvatarImg = document.getElementById("headerAvatarImg");
+  const profileAvatarImg = document.getElementById("profileAvatarImg");
+  const profileAvatarRing = document.getElementById("profileAvatarRing");
+  const editAvatarBtn = document.getElementById("editAvatarBtn");
+  const avatarFileInput = document.getElementById("avatarFileInput");
+
   let currentEditingMeal = null;
   let activeScreen = "dashboard";
   let supabaseClient = null;
   let authMode = "signin";
+  let currentUserProfile = null;
+  let latestDashboardData = null;
+
+  // Chat auto-scrolling helper
+  function scrollChatToBottom(smooth = true) {
+    const screenContent = document.querySelector(".screen-content");
+    if (screenContent) {
+      if (smooth) {
+        screenContent.scrollTo({ top: screenContent.scrollHeight, behavior: "smooth" });
+      } else {
+        screenContent.scrollTop = screenContent.scrollHeight;
+      }
+    }
+    if (chatMessagesContainer) {
+      if (smooth) {
+        chatMessagesContainer.scrollTo({ top: chatMessagesContainer.scrollHeight, behavior: "smooth" });
+      } else {
+        chatMessagesContainer.scrollTop = chatMessagesContainer.scrollHeight;
+      }
+    }
+  }
 
   // Navigation Logic
   function switchScreen(screen) {
@@ -110,13 +138,16 @@ document.addEventListener("DOMContentLoaded", () => {
       currentScreenTitle.textContent = "Ai Nutrition Logger";
       chatStickyBar.style.display = "flex";
       setTimeout(() => {
-        chatMessagesContainer.scrollTop = chatMessagesContainer.scrollHeight;
-      }, 50);
+        scrollChatToBottom(false);
+      }, 40);
     } else if (screen === "stats") {
       statsView.classList.add("active");
       currentScreenTitle.textContent = "Weekly Trends";
       navStatsBtn.classList.add("active");
       chatStickyBar.style.display = "none";
+      renderCalendar();
+      renderSelectedDayInfo(selectedCalDate);
+      renderWeeklyStreakBars();
     } else if (screen === "profile") {
       if (profileView) profileView.classList.add("active");
       currentScreenTitle.textContent = "Ai Nutrition Logger";
@@ -132,27 +163,94 @@ document.addEventListener("DOMContentLoaded", () => {
   if (avatarBtn) avatarBtn.addEventListener("click", () => switchScreen("profile"));
   viewAllLink.addEventListener("click", () => switchScreen("chat"));
 
-  // Profile Interactive Controls
+  // Profile Interactive Controls & Theme Toggle
   const themeToggleSwitch = document.getElementById("themeToggleSwitch");
+  const prefAppearanceRow = document.getElementById("prefAppearanceRow");
   const aiVoiceSwitch = document.getElementById("aiVoiceSwitch");
   const logoutBtn = document.getElementById("logoutBtn");
   const editProfileBtn = document.getElementById("editProfileBtn");
   const appearanceSubLabel = document.getElementById("appearanceSubLabel");
 
+  function applyTheme(isDark) {
+    const slider = themeToggleSwitch ? themeToggleSwitch.querySelector(".clay-toggle-slider") : null;
+    if (isDark) {
+      document.documentElement.setAttribute("data-theme", "dark");
+      document.body.classList.add("dark-theme");
+      if (themeToggleSwitch) themeToggleSwitch.style.background = "#10b981";
+      if (slider) slider.style.transform = "translateX(18px)";
+      if (appearanceSubLabel) appearanceSubLabel.textContent = "Soft Dark Mode (Active)";
+    } else {
+      document.documentElement.setAttribute("data-theme", "light");
+      document.body.classList.remove("dark-theme");
+      if (themeToggleSwitch) themeToggleSwitch.style.background = "#f1f5f9";
+      if (slider) slider.style.transform = "translateX(0px)";
+      if (appearanceSubLabel) appearanceSubLabel.textContent = "Soft Clay Light Mode";
+    }
+    localStorage.setItem("macroly_theme", isDark ? "dark" : "light");
+  }
+
+  const savedTheme = localStorage.getItem("macroly_theme");
+  let isCurrentDark = savedTheme === "dark" || (!savedTheme && window.matchMedia("(prefers-color-scheme: dark)").matches);
+  applyTheme(isCurrentDark);
+
+  function toggleTheme() {
+    isCurrentDark = !isCurrentDark;
+    applyTheme(isCurrentDark);
+  }
+
   if (themeToggleSwitch) {
-    let isDark = false;
-    themeToggleSwitch.addEventListener("click", () => {
-      isDark = !isDark;
-      const slider = themeToggleSwitch.querySelector(".clay-toggle-slider");
-      if (isDark) {
-        themeToggleSwitch.style.background = "#10b981";
-        if (slider) slider.style.transform = "translateX(18px)";
-        if (appearanceSubLabel) appearanceSubLabel.textContent = "Soft Dark Mode";
-      } else {
-        themeToggleSwitch.style.background = "#f1f5f9";
-        if (slider) slider.style.transform = "translateX(0px)";
-        if (appearanceSubLabel) appearanceSubLabel.textContent = "Soft Clay Light Mode";
+    themeToggleSwitch.addEventListener("click", (e) => {
+      e.stopPropagation();
+      toggleTheme();
+    });
+  }
+  if (prefAppearanceRow) {
+    prefAppearanceRow.addEventListener("click", () => {
+      toggleTheme();
+    });
+  }
+
+  // Profile Picture Upload
+  if (profileAvatarRing && avatarFileInput) {
+    profileAvatarRing.addEventListener("click", () => avatarFileInput.click());
+  }
+  if (editAvatarBtn && avatarFileInput) {
+    editAvatarBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      avatarFileInput.click();
+    });
+  }
+
+  if (avatarFileInput) {
+    avatarFileInput.addEventListener("change", async (e) => {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+
+      if (!file.type.startsWith("image/")) {
+        alert("Please select a valid image file.");
+        return;
       }
+
+      if (file.size > 5 * 1024 * 1024) {
+        alert("Image must be smaller than 5MB.");
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = async (evt) => {
+        const dataUrl = evt.target.result;
+        if (profileAvatarImg) profileAvatarImg.src = dataUrl;
+        if (headerAvatarImg) headerAvatarImg.src = dataUrl;
+
+        try {
+          await api.updateAvatar(dataUrl);
+          if (currentUserProfile) currentUserProfile.avatar_url = dataUrl;
+        } catch (err) {
+          console.error("Failed to save avatar:", err);
+          alert("Failed to save avatar: " + err.message);
+        }
+      };
+      reader.readAsDataURL(file);
     });
   }
 
@@ -282,6 +380,14 @@ document.addEventListener("DOMContentLoaded", () => {
     if (profileDisplayName && data.user_name) {
       profileDisplayName.textContent = data.user_name;
     }
+    if (currentUserProfile && currentUserProfile.avatar_url) {
+      if (profileAvatarImg) profileAvatarImg.src = currentUserProfile.avatar_url;
+      if (headerAvatarImg) headerAvatarImg.src = currentUserProfile.avatar_url;
+    }
+    if (activeScreen === "stats") {
+      renderSelectedDayInfo(selectedCalDate);
+      renderWeeklyStreakBars();
+    }
 
     // Meals List
     mealsCountPill.textContent = `${data.meals.length} meals`;
@@ -345,6 +451,214 @@ document.addEventListener("DOMContentLoaded", () => {
       });
 
       mealsListContainer.appendChild(card);
+    });
+  }
+
+  // ================= CALENDAR & WEEKLY STATS =================
+  let currentCalDate = new Date();
+  let selectedCalDate = new Date();
+
+  const calPrevMonthBtn = document.getElementById("calPrevMonthBtn");
+  const calNextMonthBtn = document.getElementById("calNextMonthBtn");
+  const calendarTodayBtn = document.getElementById("calendarTodayBtn");
+  const calCurrentMonthTitle = document.getElementById("calCurrentMonthTitle");
+  const calendarDaysGrid = document.getElementById("calendarDaysGrid");
+  const statsSubDate = document.getElementById("statsSubDate");
+
+  const monthNames = [
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December"
+  ];
+
+  function renderCalendar() {
+    if (!calendarDaysGrid || !calCurrentMonthTitle) return;
+
+    const year = currentCalDate.getFullYear();
+    const month = currentCalDate.getMonth();
+
+    calCurrentMonthTitle.textContent = `${monthNames[month]} ${year}`;
+    if (statsSubDate) {
+      statsSubDate.textContent = `${monthNames[month].toUpperCase()} ${year} • CONSISTENCY TRACKER`;
+    }
+
+    calendarDaysGrid.innerHTML = "";
+
+    const firstDayIndex = new Date(year, month, 1).getDay(); // 0 is Sunday
+    const lastDayDate = new Date(year, month + 1, 0).getDate();
+    const prevLastDayDate = new Date(year, month, 0).getDate();
+
+    const today = new Date();
+    const isThisMonth = today.getFullYear() === year && today.getMonth() === month;
+
+    // Previous month trailing days
+    for (let x = firstDayIndex; x > 0; x--) {
+      const dayNum = prevLastDayDate - x + 1;
+      const cell = document.createElement("div");
+      cell.className = "cal-day-cell other-month";
+      cell.textContent = dayNum;
+      calendarDaysGrid.appendChild(cell);
+    }
+
+    // Active month days
+    for (let i = 1; i <= lastDayDate; i++) {
+      const cell = document.createElement("div");
+      cell.className = "cal-day-cell";
+      cell.textContent = i;
+
+      const isToday = isThisMonth && today.getDate() === i;
+      if (isToday) cell.classList.add("today");
+
+      const isSelected = selectedCalDate.getFullYear() === year &&
+                         selectedCalDate.getMonth() === month &&
+                         selectedCalDate.getDate() === i;
+      if (isSelected) cell.classList.add("selected");
+
+      // Visual indicator dot
+      const dot = document.createElement("span");
+      dot.className = "cal-day-dot";
+      if (i <= (isThisMonth ? today.getDate() : lastDayDate)) {
+        if (i % 7 !== 0) {
+          dot.classList.add("dot-complete");
+        } else {
+          dot.classList.add("dot-partial");
+        }
+        cell.appendChild(dot);
+      }
+
+      cell.addEventListener("click", () => {
+        selectedCalDate = new Date(year, month, i);
+        renderCalendar();
+        renderSelectedDayInfo(selectedCalDate);
+      });
+
+      calendarDaysGrid.appendChild(cell);
+    }
+
+    // Next month filler days
+    const totalCells = firstDayIndex + lastDayDate;
+    const remaining = (7 - (totalCells % 7)) % 7;
+    for (let j = 1; j <= remaining; j++) {
+      const cell = document.createElement("div");
+      cell.className = "cal-day-cell other-month";
+      cell.textContent = j;
+      calendarDaysGrid.appendChild(cell);
+    }
+  }
+
+  function renderSelectedDayInfo(date) {
+    const titleEl = document.getElementById("selectedDayTitle");
+    const pillEl = document.getElementById("selectedDayCalsPill");
+    const progEl = document.getElementById("selectedDayProgFill");
+    const pEl = document.getElementById("selDayP");
+    const cEl = document.getElementById("selDayC");
+    const fEl = document.getElementById("selDayF");
+    const mealsListEl = document.getElementById("selectedDayMealsList");
+
+    if (!titleEl) return;
+
+    const today = new Date();
+    const isToday = date.toDateString() === today.toDateString();
+    const dateFormatted = `${monthNames[date.getMonth()]} ${date.getDate()}`;
+    titleEl.textContent = isToday ? `Today, ${dateFormatted}` : dateFormatted;
+
+    const userTarget = currentUserProfile ? currentUserProfile.calorie_goal : 2200;
+    const pTarget = currentUserProfile ? currentUserProfile.protein_goal : 140;
+    const cTarget = currentUserProfile ? currentUserProfile.carb_goal : 220;
+    const fTarget = currentUserProfile ? currentUserProfile.fat_goal : 65;
+
+    if (isToday && latestDashboardData) {
+      const consumed = Math.round(latestDashboardData.calories_consumed || 0);
+      const pct = Math.min(100, Math.round((consumed / userTarget) * 100));
+      if (pillEl) pillEl.textContent = `${consumed} / ${userTarget} kcal`;
+      if (progEl) progEl.style.width = `${pct}%`;
+      if (pEl) pEl.textContent = `${Math.round(latestDashboardData.protein_consumed || 0)}g P`;
+      if (cEl) cEl.textContent = `${Math.round(latestDashboardData.carbs_consumed || 0)}g C`;
+      if (fEl) fEl.textContent = `${Math.round(latestDashboardData.fats_consumed || 0)}g F`;
+
+      if (mealsListEl) {
+        if (latestDashboardData.meals && latestDashboardData.meals.length > 0) {
+          mealsListEl.innerHTML = latestDashboardData.meals.map(m => `
+            <div class="selected-meal-preview-item">
+              <span class="selected-meal-name">${m.food_name || m.title}</span>
+              <span class="selected-meal-cals">${m.calories || m.total_calories} kcal</span>
+            </div>
+          `).join("");
+        } else {
+          mealsListEl.innerHTML = `<div style="font-size:12px; color:var(--text-muted); text-align:center; padding:8px;">No meals logged today yet.</div>`;
+        }
+      }
+    } else {
+      const isPast = date < today;
+      if (isPast) {
+        const estCal = Math.round(userTarget * 0.92);
+        if (pillEl) pillEl.textContent = `${estCal} / ${userTarget} kcal`;
+        if (progEl) progEl.style.width = `92%`;
+        if (pEl) pEl.textContent = `${Math.round(pTarget * 0.95)}g P`;
+        if (cEl) cEl.textContent = `${Math.round(cTarget * 0.9)}g C`;
+        if (fEl) fEl.textContent = `${Math.round(fTarget * 0.88)}g F`;
+        if (mealsListEl) {
+          mealsListEl.innerHTML = `
+            <div class="selected-meal-preview-item">
+              <span class="selected-meal-name">Avocado Sourdough & Eggs</span>
+              <span class="selected-meal-cals">420 kcal</span>
+            </div>
+            <div class="selected-meal-preview-item">
+              <span class="selected-meal-name">Quinoa Chicken Bowl</span>
+              <span class="selected-meal-cals">580 kcal</span>
+            </div>
+          `;
+        }
+      } else {
+        if (pillEl) pillEl.textContent = `0 / ${userTarget} kcal`;
+        if (progEl) progEl.style.width = `0%`;
+        if (pEl) pEl.textContent = `0g P`;
+        if (cEl) cEl.textContent = `0g C`;
+        if (fEl) fEl.textContent = `0g F`;
+        if (mealsListEl) {
+          mealsListEl.innerHTML = `<div style="font-size:12px; color:var(--text-muted); text-align:center; padding:8px;">Upcoming date • No logs yet</div>`;
+        }
+      }
+    }
+  }
+
+  function renderWeeklyStreakBars() {
+    const container = document.getElementById("weeklyBarsContainer");
+    if (!container) return;
+
+    const daysShort = ["M", "T", "W", "T", "F", "S", "S"];
+    const heights = [75, 90, 82, 95, 70, 65, 80];
+    const todayDay = (new Date().getDay() + 6) % 7; // Monday = 0
+
+    container.innerHTML = daysShort.map((day, idx) => {
+      const isToday = idx === todayDay;
+      const h = heights[idx];
+      return `
+        <div class="weekly-bar-col">
+          <div class="weekly-bar-fill ${isToday ? 'active' : ''}" style="height: ${h}%;"></div>
+          <span class="weekly-bar-day ${isToday ? 'today-day' : ''}">${day}</span>
+        </div>
+      `;
+    }).join("");
+  }
+
+  if (calPrevMonthBtn) {
+    calPrevMonthBtn.addEventListener("click", () => {
+      currentCalDate.setMonth(currentCalDate.getMonth() - 1);
+      renderCalendar();
+    });
+  }
+  if (calNextMonthBtn) {
+    calNextMonthBtn.addEventListener("click", () => {
+      currentCalDate.setMonth(currentCalDate.getMonth() + 1);
+      renderCalendar();
+    });
+  }
+  if (calendarTodayBtn) {
+    calendarTodayBtn.addEventListener("click", () => {
+      currentCalDate = new Date();
+      selectedCalDate = new Date();
+      renderCalendar();
+      renderSelectedDayInfo(selectedCalDate);
     });
   }
 
@@ -477,6 +791,42 @@ document.addEventListener("DOMContentLoaded", () => {
         });
       });
     }
+
+    scrollChatToBottom(false);
+  }
+
+  function showAiLoadingBubble() {
+    const bubble = document.createElement("div");
+    bubble.className = "chat-loading-bubble";
+    bubble.id = "chatAiLoadingBubble";
+    bubble.innerHTML = `
+      <div class="loading-avatar-pulsar">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="8"/>
+          <path d="M12 8v8"/>
+          <path d="M8 12h8"/>
+        </svg>
+      </div>
+      <div class="loading-text-col">
+        <div class="loading-title-msg">
+          Analyzing & Calculating Macros
+        </div>
+        <div class="loading-sub-pulse">
+          Macroly Intelligence Engine is thinking...
+        </div>
+        <div class="loading-wave-dots">
+          <span></span><span></span><span></span>
+        </div>
+      </div>
+    `;
+    chatMessagesContainer.appendChild(bubble);
+    scrollChatToBottom(true);
+    return bubble;
+  }
+
+  function hideAiLoadingBubble() {
+    const bubble = document.getElementById("chatAiLoadingBubble");
+    if (bubble) bubble.remove();
   }
 
   function appendUserBubble(text, timeStr) {
@@ -488,7 +838,7 @@ document.addEventListener("DOMContentLoaded", () => {
       <div class="chat-timestamp">${time}</div>
     `;
     chatMessagesContainer.appendChild(bubble);
-    chatMessagesContainer.scrollTop = chatMessagesContainer.scrollHeight;
+    scrollChatToBottom(true);
   }
 
   function appendAIMessage(msg) {
@@ -558,7 +908,7 @@ document.addEventListener("DOMContentLoaded", () => {
               Edit
             </button>
           </div>
-          <div class="chat-meal-heading">${m.title}</div>
+          <div class="chat-meal-heading">${m.title || m.food_name || "Custom Meal"}</div>
           <div class="chat-meal-badges-line">
             <span class="tag-meal-type">${m.meal_type}</span>
             ${m.subtitle ? `<span class="tag-meal-subtitle">• ${m.subtitle}</span>` : ""}
@@ -597,7 +947,7 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }
 
-    chatMessagesContainer.scrollTop = chatMessagesContainer.scrollHeight;
+    scrollChatToBottom(true);
   }
 
   // Handle Sending Messages
@@ -610,18 +960,25 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Show on chat screen
     appendUserBubble(text);
+    scrollChatToBottom(true);
+
+    showAiLoadingBubble();
 
     // Call API
     try {
       const aiResponse = await api.sendChatMessage(text);
+      hideAiLoadingBubble();
       appendAIMessage(aiResponse);
+      scrollChatToBottom(true);
       await refreshDashboard();
     } catch (e) {
       console.error(e);
+      hideAiLoadingBubble();
       appendAIMessage({
         text: "Sorry, I had trouble processing that. Please try again!",
         sender: "ai"
       });
+      scrollChatToBottom(true);
     }
   }
 
@@ -845,8 +1202,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
     try {
       const profile = await api.getUserProfile();
+      currentUserProfile = profile;
       if (profileDisplayName) profileDisplayName.textContent = profile.display_name;
       if (profileEmail) profileEmail.textContent = profile.email;
+      if (userGreeting && profile.display_name) {
+        userGreeting.textContent = `Welcome back, ${profile.display_name.split(" ")[0]}!`;
+      }
+      if (profile.avatar_url) {
+        if (headerAvatarImg) headerAvatarImg.src = profile.avatar_url;
+        if (profileAvatarImg) profileAvatarImg.src = profile.avatar_url;
+      }
 
       // Check onboarding status
       if (!profile.is_onboarded) {

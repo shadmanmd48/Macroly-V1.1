@@ -129,10 +129,15 @@ class DataStore:
                     protein_goal REAL DEFAULT 130.0,
                     carb_goal REAL DEFAULT 220.0,
                     fat_goal REAL DEFAULT 65.0,
+                    avatar_url TEXT,
                     is_onboarded BOOLEAN DEFAULT FALSE,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 );
                 """)
+                try:
+                    cursor.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_url TEXT;")
+                except Exception:
+                    pass
 
                 # 2. meal_logs table
                 cursor.execute("""
@@ -193,10 +198,18 @@ class DataStore:
             protein_goal REAL DEFAULT 130.0,
             carb_goal REAL DEFAULT 220.0,
             fat_goal REAL DEFAULT 65.0,
+            avatar_url TEXT,
             is_onboarded INTEGER DEFAULT 0,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
         """)
+        try:
+            cursor.execute("PRAGMA table_info(users)")
+            cols = [row[1] for row in cursor.fetchall()]
+            if "avatar_url" not in cols:
+                cursor.execute("ALTER TABLE users ADD COLUMN avatar_url TEXT;")
+        except Exception:
+            pass
 
         cursor.execute("""
         CREATE TABLE IF NOT EXISTS meal_logs (
@@ -243,15 +256,15 @@ class DataStore:
         if count == 0:
             if is_pg:
                 cursor.execute("""
-                INSERT INTO users (id, email, display_name, calorie_goal, protein_goal, carb_goal, fat_goal, is_onboarded)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                INSERT INTO users (id, email, display_name, calorie_goal, protein_goal, carb_goal, fat_goal, avatar_url, is_onboarded)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
                 ON CONFLICT (id) DO NOTHING
-                """, (ELENA_USER_ID, "elena@macroly.test", "Elena", 2200, 140.0, 220.0, 65.0, True))
+                """, (ELENA_USER_ID, "elena@macroly.test", "Elena", 2200, 140.0, 220.0, 65.0, "/static/assets/avatar.jpg", True))
             else:
                 cursor.execute("""
-                INSERT OR IGNORE INTO users (id, email, display_name, calorie_goal, protein_goal, carb_goal, fat_goal, is_onboarded)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-                """, (ELENA_USER_ID, "elena@macroly.test", "Elena", 2200, 140.0, 220.0, 65.0, 1))
+                INSERT OR IGNORE INTO users (id, email, display_name, calorie_goal, protein_goal, carb_goal, fat_goal, avatar_url, is_onboarded)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """, (ELENA_USER_ID, "elena@macroly.test", "Elena", 2200, 140.0, 220.0, 65.0, "/static/assets/avatar.jpg", 1))
 
         # 2. Seed Elena vitals
         cursor.execute(f"SELECT COUNT(*) FROM user_vitals WHERE user_id = {placeholder}", (ELENA_USER_ID,))
@@ -315,6 +328,7 @@ class DataStore:
                     protein_goal=float(d.get("protein_goal") or 130.0),
                     carb_goal=float(d.get("carb_goal") or 220.0),
                     fat_goal=float(d.get("fat_goal") or 65.0),
+                    avatar_url=str(d["avatar_url"]) if d.get("avatar_url") else None,
                     is_onboarded=bool(d.get("is_onboarded"))
                 )
             return None
@@ -322,10 +336,14 @@ class DataStore:
             logger.error("Error fetching user %s: %s", user_id, e)
             return None
 
-    def get_or_create_user(self, user_id: str, email: str, display_name: str = "User") -> UserProfile:
+    def get_or_create_user(self, user_id: str, email: str, display_name: str = "User", avatar_url: Optional[str] = None) -> UserProfile:
         """Fetch user profile or create new one with sensible generic defaults."""
         user = self.get_user(user_id)
         if user:
+            # If avatar_url was passed and user doesn't have one, update it
+            if avatar_url and not user.avatar_url:
+                self.update_user_avatar(user_id, avatar_url)
+                user.avatar_url = avatar_url
             return user
 
         # Map Elena backwards compatibility
@@ -335,7 +353,7 @@ class DataStore:
                 return user
 
         placeholder = "%s" if self.use_postgres else "?"
-        # Sensible generic defaults for new users (not Elena's specific values)
+        # Sensible generic defaults for new users
         default_cal = 2000
         default_p = 130.0
         default_c = 220.0
@@ -347,15 +365,15 @@ class DataStore:
             cursor = conn.cursor()
             if self.use_postgres:
                 cursor.execute("""
-                INSERT INTO users (id, email, display_name, calorie_goal, protein_goal, carb_goal, fat_goal, is_onboarded)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                INSERT INTO users (id, email, display_name, calorie_goal, protein_goal, carb_goal, fat_goal, avatar_url, is_onboarded)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
                 ON CONFLICT (id) DO UPDATE SET email = EXCLUDED.email
-                """, (user_id, email, display_name, default_cal, default_p, default_c, default_f, is_onboarded))
+                """, (user_id, email, display_name, default_cal, default_p, default_c, default_f, avatar_url, is_onboarded))
             else:
                 cursor.execute("""
-                INSERT OR REPLACE INTO users (id, email, display_name, calorie_goal, protein_goal, carb_goal, fat_goal, is_onboarded)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-                """, (user_id, email, display_name, default_cal, default_p, default_c, default_f, 0))
+                INSERT OR REPLACE INTO users (id, email, display_name, calorie_goal, protein_goal, carb_goal, fat_goal, avatar_url, is_onboarded)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """, (user_id, email, display_name, default_cal, default_p, default_c, default_f, avatar_url, 0))
             conn.commit()
             conn.close()
             logger.info("Created user profile for %s (%s)", display_name, user_id)
@@ -370,16 +388,30 @@ class DataStore:
             protein_goal=default_p,
             carb_goal=default_c,
             fat_goal=default_f,
+            avatar_url=avatar_url,
             is_onboarded=is_onboarded
         )
 
-    def update_user_goals(self, user_id: str, calorie_goal: int, protein_goal: float, carb_goal: float, fat_goal: float, display_name: Optional[str] = None) -> Optional[UserProfile]:
+    def update_user_goals(self, user_id: str, calorie_goal: int, protein_goal: float, carb_goal: float, fat_goal: float, display_name: Optional[str] = None, avatar_url: Optional[str] = None) -> Optional[UserProfile]:
         """Update user goals and mark as onboarded."""
         placeholder = "%s" if self.use_postgres else "?"
         try:
             conn = self.get_connection()
             cursor = conn.cursor()
-            if display_name:
+            if avatar_url and display_name:
+                sql = f"""
+                UPDATE users
+                SET calorie_goal = {placeholder},
+                    protein_goal = {placeholder},
+                    carb_goal = {placeholder},
+                    fat_goal = {placeholder},
+                    display_name = {placeholder},
+                    avatar_url = {placeholder},
+                    is_onboarded = {placeholder}
+                WHERE id = {placeholder}
+                """
+                cursor.execute(sql, (calorie_goal, protein_goal, carb_goal, fat_goal, display_name, avatar_url, True, user_id))
+            elif display_name:
                 sql = f"""
                 UPDATE users
                 SET calorie_goal = {placeholder},
@@ -407,6 +439,21 @@ class DataStore:
             return self.get_user(user_id)
         except Exception as e:
             logger.error("Error updating user goals for %s: %s", user_id, e)
+            return None
+
+    def update_user_avatar(self, user_id: str, avatar_url: str) -> Optional[UserProfile]:
+        """Update user avatar URL."""
+        placeholder = "%s" if self.use_postgres else "?"
+        try:
+            conn = self.get_connection()
+            cursor = conn.cursor()
+            sql = f"UPDATE users SET avatar_url = {placeholder} WHERE id = {placeholder}"
+            cursor.execute(sql, (avatar_url, user_id))
+            conn.commit()
+            conn.close()
+            return self.get_user(user_id)
+        except Exception as e:
+            logger.error("Error updating user avatar for %s: %s", user_id, e)
             return None
 
     # --- User Vitals Management ---

@@ -73,6 +73,15 @@ const api = {
     return await this._handleResponse(res, "Failed to update nutrition goals");
   },
 
+  async updateAvatar(avatarUrl) {
+    const res = await fetch(`${API_BASE}/api/user/avatar`, {
+      method: "POST",
+      headers: this._getHeaders(true),
+      body: JSON.stringify({ avatar_url: avatarUrl })
+    });
+    return await this._handleResponse(res, "Failed to update profile picture");
+  },
+
   async getDashboard() {
     const res = await fetch(`${API_BASE}/api/dashboard`, {
       headers: this._getHeaders(false)

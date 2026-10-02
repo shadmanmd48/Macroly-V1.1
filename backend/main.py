@@ -13,7 +13,7 @@ from fastapi.responses import FileResponse
 from datetime import datetime
 from backend.models import (
     ChatRequest, ChatMessage, DashboardSummary, ManualOverrideRequest,
-    MealLog, FoodItem, UserProfile, UpdateGoalsRequest
+    MealLog, FoodItem, UserProfile, UpdateGoalsRequest, UpdateAvatarRequest
 )
 from backend.database import data_store
 from backend.auth import get_current_user, SUPABASE_URL, SUPABASE_ANON_KEY
@@ -76,6 +76,19 @@ def get_profile(user: UserProfile = Depends(get_current_user)):
     """Fetch current user's profile and goal settings."""
     return user
 
+@app.post("/api/user/avatar")
+def update_avatar(req: UpdateAvatarRequest, user: UserProfile = Depends(get_current_user)):
+    """Update authenticated user's profile picture."""
+    if not req.avatar_url or not req.avatar_url.strip():
+        raise HTTPException(status_code=400, detail="Avatar URL cannot be empty")
+    updated = data_store.update_user_avatar(user.id, req.avatar_url.strip())
+    if not updated:
+        raise HTTPException(status_code=500, detail="Failed to update avatar")
+    return {
+        "status": "success",
+        "user": updated
+    }
+
 @app.post("/api/user/goals")
 def update_goals(req: UpdateGoalsRequest, user: UserProfile = Depends(get_current_user)):
     """Update user daily macro/calorie goals and mark onboarding as complete."""
@@ -85,7 +98,8 @@ def update_goals(req: UpdateGoalsRequest, user: UserProfile = Depends(get_curren
         protein_goal=req.protein_goal,
         carb_goal=req.carb_goal,
         fat_goal=req.fat_goal,
-        display_name=req.display_name
+        display_name=req.display_name,
+        avatar_url=req.avatar_url
     )
     if not updated:
         raise HTTPException(status_code=500, detail="Failed to update goals")
