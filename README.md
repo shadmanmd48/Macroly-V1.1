@@ -8,13 +8,22 @@ Macroly transforms daily nutrition tracking from a tedious chore into an effortl
 
 ## 🌟 Key Features
 
-- **Natural Language Food Logging**: Log meals naturally (e.g., *"2 scrambled eggs, avocado toast, and an iced oat latte"*). The backend parses items, portions, and units instantly.
+- **Natural Language Food Logging**: Log meals naturally (e.g., *"3 butter naan, chicken curry with approx 20g chicken, and 250ml milk"*). The backend parses items, portions, metric units, and modifiers instantly.
+- **Multi-Item Isolation & Metric Parsing**:
+  - Automatically isolates multiple items connected by `"and"`, `","`, `"&"`, or `"+"` so quantities never leak between items.
+  - Direct metric volume (`250ml`, `500ml`) and weight (`100g`, `20g`) parsing with linear nutrient scaling.
+- **Approximation & Ingredient Modifier Intelligence**:
+  - Handles conversational qualifiers (*"approx"*, *"roughly"*, *"around"*, *"about"*).
+  - Accurately resolves compound modifiers (e.g. *"curry with 20g chicken"*) by computing gravy base plus exact meat portion rather than double-counting full portions.
+- **Intent Classification Guard**:
+  - Non-food chit-chat (*"hi"*, *"thanks"*) is answered conversationally with zero meals logged and zero database clutter.
+  - Questions like *"what's my calorie goal today?"* return personalized targets directly from user profiles.
 - **Multi-Tiered Nutrition Engine**:
-  - **Smart Cache**: Instant sub-5ms lookup for recurring and common food items.
-  - **FatSecret Platform API**: Live access to verified commercial and USDA nutritional databases.
-  - **Groq LLM (Llama 3 70B)**: Contextual recipe decomposition and macro estimation for complex meals, backed by a deterministic safety fallback.
+  - **Smart Cache**: Instant sub-5ms lookup for recurring and common food items with exact-match precedence.
+  - **CalorieNinjas Live API**: Real-time access to verified nutritional databases with header-based authentication &mdash; zero IP locks on dynamic server environments like Railway.
+  - **Groq LLM (`llama-3.3-70b-versatile` / `qwen/qwen3.8-27b`)**: Contextual recipe decomposition and macro estimation for complex meals, backed by a deterministic safety fallback.
+- **Conversational Corrections & Deletions**: Quickly adjust previous entries (e.g., *"Actually make that 2 rotis, not 3"*) or delete items (*"remove the dal"*) with real-time calorie delta feedback.
 - **Real-Time Macro Dashboard**: Visual progress rings tracking daily Calories, Protein, Carbohydrates, and Fats against personalized targets.
-- **Conversational Corrections & Undo**: Quickly adjust previous entries (e.g., *"Actually it was 1 slice, not 2"*) or revert the latest log with one click.
 - **Workout & Activity Tracking**: Log strength and cardiovascular sessions with automatic caloric expenditure calculation.
 - **Secure Multi-User Authentication**: Production-ready authentication supporting both Email/Password credentials and Google OAuth via Supabase, with automatic database multi-tenancy.
 - **Offline & Local Development Resilience**: Seamless automated failover from hosted PostgreSQL to local SQLite if network connectivity is interrupted.
@@ -28,8 +37,8 @@ Macroly transforms daily nutrition tracking from a tedious chore into an effortl
 | **Backend** | Python 3.10+, [FastAPI](https://fastapi.tiangolo.com/), Uvicorn, Pydantic v2 |
 | **Database** | [PostgreSQL](https://www.postgresql.org/) (hosted on [Supabase](https://supabase.com/)), `psycopg2-binary`, SQLite (zero-config fallback) |
 | **Authentication** | Supabase Auth (JWT Bearer Token verification, Email/Password, Google OAuth) |
-| **AI / NLP** | [Groq Cloud](https://groq.com/) (Llama-3.3-70b-versatile / Llama-3.1-8b-instant), Google Gemini API |
-| **Nutrition Data** | [FatSecret REST API](https://platform.fatsecret.com/api/) (OAuth 2.0 Client Credentials) |
+| **AI / NLP** | [Groq Cloud](https://groq.com/) (`llama-3.3-70b-versatile`, `qwen/qwen3.8-27b`), Intent Classifier |
+| **Nutrition Data** | [CalorieNinjas REST API](https://calorieninjas.com/api) (Header-based `X-Api-Key`, dynamic IP resilient) |
 | **Frontend** | Modern Vanilla JavaScript (ES6+), Vanilla CSS (Custom Design System, Glassmorphism, Micro-animations), Supabase JS Client |
 
 ---
@@ -39,12 +48,12 @@ Macroly transforms daily nutrition tracking from a tedious chore into an effortl
 ```text
 Macroly/
 ├── backend/
-│   ├── ai_interpreter.py     # Natural language meal parser (Groq / Gemini / Rule engine)
+│   ├── ai_interpreter.py     # Natural language meal parser (Groq LLM / Intent classifier / Rule engine)
 │   ├── auth.py               # Supabase JWT verification and user identity dependency
 │   ├── database.py           # PostgreSQL/SQLite dual-mode connection pool and queries
 │   ├── main.py               # FastAPI application routes, middleware, and lifecycle
 │   ├── models.py             # Pydantic schemas for requests, responses, and user profiles
-│   ├── nutrition_service.py  # FatSecret API integration and token management
+│   ├── nutrition_service.py  # CalorieNinjas API integration and nutrient scaling
 │   └── smart_cache.py        # High-performance food caching and macro scaling
 ├── frontend/
 │   ├── assets/               # Demo avatars and culinary imagery
@@ -55,6 +64,7 @@ Macroly/
 │   │   └── app.js            # Application controller, modal managers, and UI bindings
 │   └── index.html            # Main single-page application dashboard
 ├── docs/
+│   ├── ai_architecture_and_feature_log.md  # Comprehensive AI pipeline & intelligence record
 │   ├── api.md                # Comprehensive REST API endpoint reference
 │   └── architecture.md       # Multi-tier pipeline and database system design
 ├── .env.example              # Environment variables template with setup documentation
@@ -74,15 +84,15 @@ Macroly/
 - *(Optional)* Free accounts for:
   - [Supabase](https://supabase.com) (for PostgreSQL database & User Auth)
   - [Groq Console](https://console.groq.com) (for high-speed AI parsing)
-  - [FatSecret Platform](https://platform.fatsecret.com/api/) (for live food database search)
+  - [CalorieNinjas](https://calorieninjas.com) (for live food database search)
 
 > **Note**: Macroly is designed to run out of the box even without external API keys — it will automatically fall back to rule-based parsing and local SQLite database storage for local testing!
 
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/your-username/macroly.git
-cd macroly
+git clone https://github.com/shadmanmd48/Macroly-V1.1.git
+cd Macroly
 ```
 
 ### 2. Set Up a Virtual Environment
@@ -124,9 +134,8 @@ SUPABASE_ANON_KEY=your_supabase_anon_key_here
 # AI Engine
 GROQ_API_KEY=gsk_your_groq_api_key_here
 
-# FatSecret API (Optional)
-FATSECRET_CLIENT_ID=your_fatsecret_client_id_here
-FATSECRET_CLIENT_SECRET=your_fatsecret_client_secret_here
+# CalorieNinjas API (Optional, for live nutrition lookup)
+CALORIENINJAS_API_KEY=your_calorieninjas_api_key_here
 ```
 
 ### 5. Run the Application
@@ -147,14 +156,9 @@ The application will be live at:
 ## 🧪 Documentation
 
 For detailed technical deep-dives, consult the `docs/` directory:
-- [Architecture & Multi-Tier Resolution](docs/architecture.md): In-depth look at caching, API fallbacks, and JWT validation.
+- [AI Architecture & Intelligence Feature Log](docs/ai_architecture_and_feature_log.md): Record of multi-tier AI layers, metric parsing, approximation qualifiers, and scaling logic.
+- [Architecture & Multi-Tier Resolution](docs/architecture.md): In-depth look at system topology, pipeline layers, and JWT validation.
 - [REST API Reference](docs/api.md): Schema specifications and example payloads for all HTTP endpoints.
-
----
-
-## 🤖 Engineering & AI Methodology
-
-This codebase was designed and built utilizing modern AI-assisted software engineering workflows (including Google DeepMind's Antigravity agentic coding framework). Architectural structure, domain modeling, API contracts, security audits, and code standards were guided by rigorous human design principles, ensuring a clean, maintainable, and production-ready standard.
 
 ---
 
