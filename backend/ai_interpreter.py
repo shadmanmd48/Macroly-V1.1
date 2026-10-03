@@ -9,7 +9,7 @@ from backend.models import FoodItem, MealLog, ChatMessage, WorkoutLog
 from backend.nutrition_service import nutrition_service
 
 # Ensure environment variables are loaded
-load_dotenv()
+load_dotenv(override=True)
 
 logger = logging.getLogger("macroly.ai_interpreter")
 

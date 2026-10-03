@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 from backend.models import MealLog, FoodItem, Vitals, DashboardSummary, ChatMessage, UserProfile
 
 # Ensure environment variables are loaded
-load_dotenv()
+load_dotenv(override=True)
 
 logger = logging.getLogger("macroly.database")
 DATABASE_URL = os.getenv("DATABASE_URL", "").strip()
@@ -17,7 +17,7 @@ SQLITE_DB_PATH = os.getenv("SQLITE_DB_PATH", DEFAULT_SQLITE_PATH).strip()
 def is_postgres() -> bool:
     return DATABASE_URL.startswith("postgresql://") or DATABASE_URL.startswith("postgres://")
 
-ELENA_USER_ID = "elena-demo-account-000000000001"
+ELENA_USER_ID = "86759b8f-d1fd-4f9a-9e3d-a93bf143c10b"
 
 # Baseline mock meals for initial Elena seeding
 BASELINE_MEALS = [
@@ -122,7 +122,7 @@ class DataStore:
                 # 1. users table
                 cursor.execute("""
                 CREATE TABLE IF NOT EXISTS users (
-                    id VARCHAR(255) PRIMARY KEY,
+                    id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
                     email VARCHAR(255) NOT NULL,
                     display_name VARCHAR(255) DEFAULT 'User',
                     calorie_goal INTEGER DEFAULT 2000,
@@ -134,6 +134,7 @@ class DataStore:
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 );
                 """)
+                cursor.execute("CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);")
                 try:
                     cursor.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_url TEXT;")
                 except Exception:
@@ -143,7 +144,7 @@ class DataStore:
                 cursor.execute("""
                 CREATE TABLE IF NOT EXISTS meal_logs (
                     id VARCHAR(255) PRIMARY KEY,
-                    user_id VARCHAR(255) NOT NULL DEFAULT 'Elena',
+                    user_id VARCHAR(255) NOT NULL,
                     food_name VARCHAR(255) NOT NULL,
                     quantity REAL DEFAULT 1.0,
                     unit VARCHAR(50) DEFAULT 'serving',
@@ -250,9 +251,9 @@ class DataStore:
     def _seed_elena(self, cursor, is_pg: bool):
         placeholder = "%s" if is_pg else "?"
         # 1. Seed Elena user
-        cursor.execute(f"SELECT COUNT(*) FROM users WHERE id = {placeholder} OR id = 'Elena'", (ELENA_USER_ID,))
+        cursor.execute(f"SELECT COUNT(*) FROM users WHERE id = {placeholder}", (ELENA_USER_ID,))
         row = cursor.fetchone()
-        count = row[0] if row else 0
+        count = row[0] if (isinstance(row, (tuple, list))) else (list(row.values())[0] if row else 0)
         if count == 0:
             if is_pg:
                 cursor.execute("""
@@ -269,7 +270,8 @@ class DataStore:
         # 2. Seed Elena vitals
         cursor.execute(f"SELECT COUNT(*) FROM user_vitals WHERE user_id = {placeholder}", (ELENA_USER_ID,))
         row = cursor.fetchone()
-        if (row[0] if row else 0) == 0:
+        count = row[0] if (isinstance(row, (tuple, list))) else (list(row.values())[0] if row else 0)
+        if count == 0:
             if is_pg:
                 cursor.execute("""
                 INSERT INTO user_vitals (user_id, workout_kcal, workout_mins, hydration_liters, hydration_target, weight_kg)
@@ -283,9 +285,10 @@ class DataStore:
                 """, (ELENA_USER_ID,))
 
         # 3. Seed Elena meals
-        cursor.execute(f"SELECT COUNT(*) FROM meal_logs WHERE user_id = {placeholder} OR user_id = 'Elena'", (ELENA_USER_ID,))
+        cursor.execute(f"SELECT COUNT(*) FROM meal_logs WHERE user_id = {placeholder}", (ELENA_USER_ID,))
         row = cursor.fetchone()
-        if (row[0] if row else 0) == 0:
+        count = row[0] if (isinstance(row, (tuple, list))) else (list(row.values())[0] if row else 0)
+        if count == 0:
             for m in BASELINE_MEALS:
                 if is_pg:
                     cursor.execute("""
@@ -311,6 +314,8 @@ class DataStore:
 
     def get_user(self, user_id: str) -> Optional[UserProfile]:
         """Fetch user profile by user_id."""
+        if user_id == "Elena":
+            user_id = ELENA_USER_ID
         placeholder = "%s" if self.use_postgres else "?"
         try:
             conn = self.get_connection()
@@ -394,6 +399,8 @@ class DataStore:
 
     def update_user_goals(self, user_id: str, calorie_goal: int, protein_goal: float, carb_goal: float, fat_goal: float, display_name: Optional[str] = None, avatar_url: Optional[str] = None) -> Optional[UserProfile]:
         """Update user goals and mark as onboarded."""
+        if user_id == "Elena":
+            user_id = ELENA_USER_ID
         placeholder = "%s" if self.use_postgres else "?"
         try:
             conn = self.get_connection()
@@ -443,6 +450,8 @@ class DataStore:
 
     def update_user_avatar(self, user_id: str, avatar_url: str) -> Optional[UserProfile]:
         """Update user avatar URL."""
+        if user_id == "Elena":
+            user_id = ELENA_USER_ID
         placeholder = "%s" if self.use_postgres else "?"
         try:
             conn = self.get_connection()
@@ -460,6 +469,8 @@ class DataStore:
 
     def get_vitals(self, user_id: str) -> Vitals:
         """Fetch user-scoped vitals or return defaults."""
+        if user_id == "Elena":
+            user_id = ELENA_USER_ID
         placeholder = "%s" if self.use_postgres else "?"
         try:
             conn = self.get_connection()
@@ -484,6 +495,8 @@ class DataStore:
 
     def log_workout(self, user_id: str, duration_mins: int, calories_burned: int):
         """Add workout minutes and burned calories for the authenticated user."""
+        if user_id == "Elena":
+            user_id = ELENA_USER_ID
         current = self.get_vitals(user_id)
         new_mins = current.workout_mins + duration_mins
         new_kcal = current.workout_kcal + calories_burned
@@ -511,6 +524,8 @@ class DataStore:
 
     def add_hydration(self, user_id: str, liters: float):
         """Add hydration for authenticated user."""
+        if user_id == "Elena":
+            user_id = ELENA_USER_ID
         current = self.get_vitals(user_id)
         new_hydration = round(current.hydration_liters + liters, 1)
         placeholder = "%s" if self.use_postgres else "?"
@@ -583,15 +598,15 @@ class DataStore:
 
     def get_all_meals(self, user_id: str) -> List[MealLog]:
         """Fetch all meal logs directly for the specified user."""
+        if user_id == "Elena":
+            user_id = ELENA_USER_ID
         placeholder = "%s" if self.use_postgres else "?"
-        # Match Elena backwards compatibility
-        alt_id = "Elena" if user_id == ELENA_USER_ID else user_id
         try:
             conn = self.get_connection()
             cursor = conn.cursor()
             cursor.execute(
-                f"SELECT * FROM meal_logs WHERE user_id = {placeholder} OR user_id = {placeholder} ORDER BY created_at ASC",
-                (user_id, alt_id)
+                f"SELECT * FROM meal_logs WHERE user_id = {placeholder} ORDER BY created_at ASC",
+                (user_id,)
             )
             rows = cursor.fetchall()
             conn.close()
@@ -602,15 +617,16 @@ class DataStore:
 
     def get_meal_by_id(self, meal_id: str, user_id: Optional[str] = None) -> Optional[MealLog]:
         """Fetch meal by id, optionally verifying ownership."""
+        if user_id == "Elena":
+            user_id = ELENA_USER_ID
         placeholder = "%s" if self.use_postgres else "?"
         try:
             conn = self.get_connection()
             cursor = conn.cursor()
             if user_id:
-                alt_id = "Elena" if user_id == ELENA_USER_ID else user_id
                 cursor.execute(
-                    f"SELECT * FROM meal_logs WHERE id = {placeholder} AND (user_id = {placeholder} OR user_id = {placeholder})",
-                    (meal_id, user_id, alt_id)
+                    f"SELECT * FROM meal_logs WHERE id = {placeholder} AND user_id = {placeholder}",
+                    (meal_id, user_id)
                 )
             else:
                 cursor.execute(
@@ -628,6 +644,8 @@ class DataStore:
 
     def add_meal(self, meal: MealLog, user_id: str):
         """Persist meal strictly under the authenticated user's ID."""
+        if user_id == "Elena":
+            user_id = ELENA_USER_ID
         placeholder = "%s" if self.use_postgres else "?"
         items_json = json.dumps([it.dict() for it in meal.items]) if meal.items else None
         try:
@@ -670,6 +688,8 @@ class DataStore:
 
     def update_meal(self, meal_id: str, updated_data: Dict[str, Any], user_id: Optional[str] = None) -> Optional[MealLog]:
         """Update meal verifying user ownership."""
+        if user_id == "Elena":
+            user_id = ELENA_USER_ID
         current_meal = self.get_meal_by_id(meal_id, user_id=user_id)
         if not current_meal:
             return None
@@ -699,29 +719,55 @@ class DataStore:
         try:
             conn = self.get_connection()
             cursor = conn.cursor()
-            sql = f"""
-            UPDATE meal_logs
-            SET food_name = {placeholder},
-                calories = {placeholder},
-                protein = {placeholder},
-                carbs = {placeholder},
-                fats = {placeholder},
-                meal_type = {placeholder},
-                timestamp = {placeholder},
-                items_json = {placeholder}
-            WHERE id = {placeholder}
-            """
-            cursor.execute(sql, (
-                current_meal.title,
-                current_meal.total_calories,
-                current_meal.protein,
-                current_meal.carbs,
-                current_meal.fats,
-                current_meal.meal_type,
-                current_meal.timestamp,
-                items_json,
-                meal_id
-            ))
+            if user_id:
+                sql = f"""
+                UPDATE meal_logs
+                SET food_name = {placeholder},
+                    calories = {placeholder},
+                    protein = {placeholder},
+                    carbs = {placeholder},
+                    fats = {placeholder},
+                    meal_type = {placeholder},
+                    timestamp = {placeholder},
+                    items_json = {placeholder}
+                WHERE id = {placeholder} AND user_id = {placeholder}
+                """
+                cursor.execute(sql, (
+                    current_meal.title,
+                    current_meal.total_calories,
+                    current_meal.protein,
+                    current_meal.carbs,
+                    current_meal.fats,
+                    current_meal.meal_type,
+                    current_meal.timestamp,
+                    items_json,
+                    meal_id,
+                    user_id
+                ))
+            else:
+                sql = f"""
+                UPDATE meal_logs
+                SET food_name = {placeholder},
+                    calories = {placeholder},
+                    protein = {placeholder},
+                    carbs = {placeholder},
+                    fats = {placeholder},
+                    meal_type = {placeholder},
+                    timestamp = {placeholder},
+                    items_json = {placeholder}
+                WHERE id = {placeholder}
+                """
+                cursor.execute(sql, (
+                    current_meal.title,
+                    current_meal.total_calories,
+                    current_meal.protein,
+                    current_meal.carbs,
+                    current_meal.fats,
+                    current_meal.meal_type,
+                    current_meal.timestamp,
+                    items_json,
+                    meal_id
+                ))
             conn.commit()
             conn.close()
             logger.info("Updated meal %s", meal_id)
@@ -732,14 +778,15 @@ class DataStore:
 
     def delete_meal(self, meal_id: str, user_id: Optional[str] = None) -> bool:
         """Delete meal verifying user ownership."""
+        if user_id == "Elena":
+            user_id = ELENA_USER_ID
         placeholder = "%s" if self.use_postgres else "?"
         try:
             conn = self.get_connection()
             cursor = conn.cursor()
             if user_id:
-                alt_id = "Elena" if user_id == ELENA_USER_ID else user_id
-                sql = f"DELETE FROM meal_logs WHERE id = {placeholder} AND (user_id = {placeholder} OR user_id = {placeholder})"
-                cursor.execute(sql, (meal_id, user_id, alt_id))
+                sql = f"DELETE FROM meal_logs WHERE id = {placeholder} AND user_id = {placeholder}"
+                cursor.execute(sql, (meal_id, user_id))
             else:
                 sql = f"DELETE FROM meal_logs WHERE id = {placeholder}"
                 cursor.execute(sql, (meal_id,))
@@ -754,6 +801,8 @@ class DataStore:
 
     def get_dashboard(self, user_id: str) -> DashboardSummary:
         """Build user-isolated dashboard summary."""
+        if user_id == "Elena":
+            user_id = ELENA_USER_ID
         user = self.get_user(user_id)
         if not user:
             user = self.get_or_create_user(user_id, f"{user_id}@macroly.app", "User")
@@ -794,12 +843,13 @@ class DataStore:
 
     def reset_to_default(self, user_id: str):
         """Resets only the specific user's meals and vitals."""
+        if user_id == "Elena":
+            user_id = ELENA_USER_ID
         placeholder = "%s" if self.use_postgres else "?"
         try:
             conn = self.get_connection()
             cursor = conn.cursor()
-            alt_id = "Elena" if user_id == ELENA_USER_ID else user_id
-            cursor.execute(f"DELETE FROM meal_logs WHERE user_id = {placeholder} OR user_id = {placeholder}", (user_id, alt_id))
+            cursor.execute(f"DELETE FROM meal_logs WHERE user_id = {placeholder}", (user_id,))
             cursor.execute(f"DELETE FROM user_vitals WHERE user_id = {placeholder}", (user_id,))
             if user_id == ELENA_USER_ID:
                 self._seed_elena(cursor, is_pg=self.use_postgres)
@@ -812,9 +862,13 @@ class DataStore:
     # --- Chat History Management ---
 
     def get_chat_history(self, user_id: str) -> List[ChatMessage]:
+        if user_id == "Elena":
+            user_id = ELENA_USER_ID
         return self.chat_histories.get(user_id, [])
 
     def add_chat_message(self, user_id: str, message: ChatMessage):
+        if user_id == "Elena":
+            user_id = ELENA_USER_ID
         if user_id not in self.chat_histories:
             self.chat_histories[user_id] = []
         self.chat_histories[user_id].append(message)

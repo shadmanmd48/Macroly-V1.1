@@ -10,7 +10,7 @@ from dotenv import load_dotenv
 from backend.models import UserProfile
 from backend.database import data_store, ELENA_USER_ID
 
-load_dotenv()
+load_dotenv(override=True)
 
 logger = logging.getLogger("macroly.auth")
 
@@ -38,16 +38,6 @@ def verify_supabase_token(token: str) -> UserProfile:
             elena_user = data_store.get_or_create_user(ELENA_USER_ID, "elena@macroly.test", "Elena")
         _TOKEN_CACHE[token] = (elena_user, now + CACHE_TTL_SECONDS)
         return elena_user
-
-    # Test user tokens for automated tests & verification
-    if token.startswith("test-user-"):
-        parts = token.split(":")
-        t_id = parts[0]
-        t_email = parts[1] if len(parts) > 1 else f"{t_id}@macroly.test"
-        t_name = parts[2] if len(parts) > 2 else "Alex Turner"
-        test_user = data_store.get_or_create_user(t_id, t_email, t_name)
-        _TOKEN_CACHE[token] = (test_user, now + CACHE_TTL_SECONDS)
-        return test_user
 
     if not SUPABASE_URL or not SUPABASE_ANON_KEY:
         logger.error("SUPABASE_URL or SUPABASE_ANON_KEY is not configured")

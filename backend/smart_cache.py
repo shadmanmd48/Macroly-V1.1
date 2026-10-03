@@ -6,7 +6,7 @@ from typing import Optional, Dict, Any, List
 from dotenv import load_dotenv
 
 # Ensure environment variables are loaded
-load_dotenv()
+load_dotenv(override=True)
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 logger = logging.getLogger("macroly.database")

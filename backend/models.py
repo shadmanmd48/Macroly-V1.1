@@ -53,18 +53,18 @@ class ChatMessage(BaseModel):
     suggestions: List[str] = []
 
 class DashboardSummary(BaseModel):
-    user_name: str = "Elena"
-    greeting: str = "Good morning, Elena 👋"
-    date_str: str = "Thursday, Oct 24"
-    calorie_target: int = 2200
-    calories_consumed: int = 1450
-    calories_burned: int = 320
-    calories_left: int = 750
-    protein_consumed: float = 110.0
-    protein_target: float = 140.0
-    carbs_consumed: float = 165.0
+    user_name: str = "User"
+    greeting: str = "Good day, User 👋"
+    date_str: str = ""
+    calorie_target: int = 2000
+    calories_consumed: int = 0
+    calories_burned: int = 0
+    calories_left: int = 2000
+    protein_consumed: float = 0.0
+    protein_target: float = 130.0
+    carbs_consumed: float = 0.0
     carbs_target: float = 220.0
-    fats_consumed: float = 42.0
+    fats_consumed: float = 0.0
     fats_target: float = 65.0
     vitals: Vitals
     meals: List[MealLog] = []

@@ -328,7 +328,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   if (resetDataBtn) {
     resetDataBtn.addEventListener("click", async () => {
-      if (confirm("Reset today's meals to Elena's baseline demo meals?")) {
+      if (confirm("Reset today's meals and vitals?")) {
         try {
           await api.resetData();
           await refreshDashboard();
@@ -788,13 +788,15 @@ document.addEventListener("DOMContentLoaded", () => {
   function initMockupChatSeed() {
     chatMessagesContainer.innerHTML = "";
 
-    const isElena = !currentUserProfile || 
-                    currentUserProfile.id.includes("elena") || 
-                    currentUserProfile.id === "Elena" || 
-                    currentUserProfile.email === "elena.rostova@email.com";
+    const isElena = currentUserProfile && (
+      currentUserProfile.id === "86759b8f-d1fd-4f9a-9e3d-a93bf143c10b" || 
+      currentUserProfile.id.includes("elena") || 
+      currentUserProfile.id === "Elena" || 
+      (currentUserProfile.email && currentUserProfile.email.toLowerCase().includes("elena"))
+    );
 
     if (!isElena) {
-      const firstName = currentUserProfile.display_name ? currentUserProfile.display_name.split(" ")[0] : "there";
+      const firstName = (currentUserProfile && currentUserProfile.display_name) ? currentUserProfile.display_name.split(" ")[0] : "there";
       const welcomeHtml = `
         <div class="chat-response-ai">
           <div class="ai-message-sender-tag">
