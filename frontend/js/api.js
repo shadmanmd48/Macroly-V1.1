@@ -1,5 +1,12 @@
 // Macroly REST API Client with Supabase Bearer Authentication
-const API_BASE = "";
+const isLocalMachine = typeof window !== "undefined" && 
+  (window.location.hostname === "localhost" || 
+   window.location.hostname === "127.0.0.1" || 
+   window.location.protocol === "file:");
+
+const API_BASE = (isLocalMachine && window.location.port && window.location.port !== "8000")
+  ? "http://127.0.0.1:8000"
+  : "";
 
 const api = {
   authToken: localStorage.getItem("macroly_auth_token") || "",

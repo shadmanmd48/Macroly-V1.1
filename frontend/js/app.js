@@ -501,6 +501,7 @@ document.addEventListener("DOMContentLoaded", () => {
       });
 
       mealsListContainer.appendChild(card);
+    });
   }
 
   // Goals Management Modal Handlers
@@ -1516,15 +1517,9 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // Protected Demo Account Shortcut (Admin/Developer only)
-  const isDevOrDemoMode = window.location.search.includes("demo") || 
-                          window.location.search.includes("dev") || 
-                          window.location.search.includes("admin");
+  // Quick Demo Account Shortcut (Instant Access)
   if (demoAccountBtn) {
-    if (isDevOrDemoMode) {
-      demoAccountBtn.style.display = "flex";
-    }
-
+    demoAccountBtn.style.display = "flex";
     demoAccountBtn.addEventListener("click", async () => {
       await handleAuthSuccess("elena-demo-token");
     });
