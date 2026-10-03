@@ -210,21 +210,25 @@ class SmartCache:
                 base_qty = row_dict["serving_qty"] or 1.0
                 scale = quantity / base_qty if base_qty > 0 else quantity
 
-                # Check if unit has a metric scale (e.g. "500ml", "250ml") when base is glass/cup/250ml
-                if unit and row_dict.get("serving_unit") in ["glass", "cup", "250ml"] and ("ml" in str(unit).lower()):
-                    m_ml = re.search(r'(\d+(?:\.\d+)?)\s*ml', str(unit), re.I)
-                    if m_ml:
-                        ml_val = float(m_ml.group(1))
-                        scale = scale * (ml_val / 250.0)
+                # Check if unit has a metric scale (e.g. "500ml", "250ml", or unit="ml" with quantity=250) when base is glass/cup/250ml
+                if unit and row_dict.get("serving_unit") in ["glass", "cup", "250ml"]:
+                    unit_str = str(unit).lower().strip()
+                    if unit_str in ["ml", "milliliter", "milliliters"]:
+                        scale = quantity / 250.0
+                    elif "ml" in unit_str:
+                        m_ml = re.search(r'(\d+(?:\.\d+)?)\s*ml', unit_str)
+                        if m_ml:
+                            ml_val = float(m_ml.group(1))
+                            scale = (quantity / base_qty) * (ml_val / 250.0)
 
                 # Check if unit is in grams (e.g. "20g", "20 gram", unit="gram", quantity=20)
-                if unit and str(unit).lower() in ["g", "gram", "grams"] and row_dict.get("serving_unit") not in ["g", "gram", "grams"]:
+                if unit and str(unit).lower().strip() in ["g", "gram", "grams"] and row_dict.get("serving_unit") not in ["g", "gram", "grams"]:
                     scale = (quantity / 100.0)
                 elif unit and re.search(r'(\d+(?:\.\d+)?)\s*(?:g|gram|grams)\b', str(unit), re.I) and row_dict.get("serving_unit") not in ["g", "gram"]:
                     m_g = re.search(r'(\d+(?:\.\d+)?)\s*(?:g|gram|grams)\b', str(unit), re.I)
                     if m_g:
                         g_val = float(m_g.group(1))
-                        scale = scale * (g_val / 100.0)
+                        scale = (quantity / base_qty) * (g_val / 100.0)
 
                 # Special portion modifier: e.g. "chicken curry" with unit "portion with 20g chicken"
                 if unit and "curry" in row_dict.get("food_key", "") and re.search(r'(\d+(?:\.\d+)?)\s*g\b.*chicken', str(unit), re.I):

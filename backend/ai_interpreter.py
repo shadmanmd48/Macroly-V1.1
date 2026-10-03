@@ -482,7 +482,8 @@ class AIInterpreter:
                 "Analyze the user's food log message and extract all individual food items, their numerical quantities, "
                 "and standard serving units. "
                 "If an item is described with an ingredient portion (e.g., 'chicken curry with approx 20g chicken'), capture it as the dish (e.g. name: 'chicken curry', quantity: 1, unit: 'portion with 20g chicken'). Do NOT double count the meat as a separate item. Never drop items. "
-                "Each food item must strictly get its own independent quantity from its own phrase. Do NOT assign or inherit quantities across items. "
+                "Each food item must strictly get its own independent quantity from its own phrase. Do NOT assign, inherit, or share quantities across items connected by 'and', '&', '+', or commas. "
+                "When a metric volume or weight is specified like '250ml milk' or '100g chicken', represent it strictly as quantity: 1, unit: '250ml' (or '100g'). Do NOT set quantity to 250 with unit 'ml'. "
                 "Also identify the overall meal_type (Breakfast, Lunch, Dinner, or Snack). "
                 "You must return ONLY a valid JSON object matching this exact schema with no extra text or markdown formatting:\n"
                 '{"items": [{"name": "string", "quantity": number, "unit": "string"}], "meal_type": "string"}'
@@ -535,6 +536,11 @@ class AIInterpreter:
                 except (ValueError, TypeError):
                     qty = 1.0
                 unit = str(it.get("unit") or "serving").strip()
+
+                # Defensive normalization: if model returns quantity=250 and unit="ml", normalize to 1 unit of 250ml
+                if unit.lower() in ["ml", "g", "gram", "grams", "oz"] and qty > 5:
+                    unit = f"{int(qty) if qty.is_integer() else qty}{unit.lower()}"
+                    qty = 1.0
 
                 nut = nutrition_service.get_nutrition(raw_name, qty, unit)
                 food_items.append(FoodItem(

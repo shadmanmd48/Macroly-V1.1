@@ -65,7 +65,7 @@ We follow a simplified Git Flow / Trunk-Based hybrid branching model designed fo
    Follow conventional commits:
    - `feat: add voice input logging for meals`
    - `fix: resolve token refresh race condition`
-   - `docs: update FatSecret onboarding instructions`
+   - `docs: update CalorieNinjas onboarding instructions`
    - `refactor: optimize smart cache query latency`
 
 6. **Submit a Pull Request**:
