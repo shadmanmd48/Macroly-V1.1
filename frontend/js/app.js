@@ -1586,6 +1586,65 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  // APK Notice Popup Logic
+  const apkNoticeToast = document.getElementById("apkNoticeToast");
+  const apkToastClose = document.getElementById("apkToastClose");
+  const apkInfoRow = document.getElementById("apkInfoRow");
+
+  let apkToastTimer = null;
+
+  function showApkNotice(customMsg) {
+    if (!apkNoticeToast) return;
+    if (customMsg) {
+      const descEl = apkNoticeToast.querySelector(".apk-toast-desc");
+      if (descEl) descEl.textContent = customMsg;
+    }
+    apkNoticeToast.classList.add("show");
+
+    if (apkToastTimer) clearTimeout(apkToastTimer);
+    apkToastTimer = setTimeout(() => {
+      apkNoticeToast.classList.remove("show");
+    }, 6500);
+  }
+
+  function hideApkNotice() {
+    if (!apkNoticeToast) return;
+    apkNoticeToast.classList.remove("show");
+    if (apkToastTimer) clearTimeout(apkToastTimer);
+  }
+
+  if (apkToastClose) {
+    apkToastClose.addEventListener("click", (e) => {
+      e.stopPropagation();
+      hideApkNotice();
+    });
+  }
+
+  if (apkInfoRow) {
+    apkInfoRow.addEventListener("click", () => {
+      showApkNotice("APK update will be given soon! Stay tuned.");
+    });
+  }
+
+  if (apkNoticeToast) {
+    apkNoticeToast.addEventListener("mouseenter", () => {
+      if (apkToastTimer) clearTimeout(apkToastTimer);
+    });
+    apkNoticeToast.addEventListener("mouseleave", () => {
+      if (apkNoticeToast.classList.contains("show")) {
+        apkToastTimer = setTimeout(hideApkNotice, 3500);
+      }
+    });
+  }
+
+  // Expose globally for interactive calls
+  window.showApkUpdateNotice = showApkNotice;
+
+  // Automatically trigger popup notice on load
+  setTimeout(() => {
+    showApkNotice("APK update will be given soon!");
+  }, 1200);
+
   // Initial Boot with Supabase Authentication
   initAuth();
 });

@@ -7,7 +7,7 @@
   <title>Macroly - AI Nutrition & Macro Tracker</title>
   <meta name="description"
     content="Conversational AI-powered calorie and macro tracking application. Chat to log meals and track nutrition in real time.">
-  <link rel="stylesheet" href="/static/css/styles.css?v=3.2">
+  <link rel="stylesheet" href="/static/css/styles.css?v=3.3">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 
@@ -34,6 +34,26 @@
   </svg>
 
   <div class="device-container" id="app">
+    <!-- Floating APK Notice Popup Toast -->
+    <div class="apk-notice-toast" id="apkNoticeToast" role="alert" aria-live="polite">
+      <div class="apk-toast-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="5" y="2" width="14" height="20" rx="3" ry="3"></rect>
+          <line x1="12" y1="18" x2="12.01" y2="18"></line>
+        </svg>
+      </div>
+      <div class="apk-toast-content">
+        <div class="apk-toast-title">Android App / APK</div>
+        <div class="apk-toast-desc">APK update will be given soon!</div>
+      </div>
+      <button class="apk-toast-close" id="apkToastClose" title="Dismiss notice" aria-label="Dismiss">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+    </div>
+
     <header class="app-header">
       <div class="brand-section" id="headerBrandSection">
         <button class="header-back-btn" id="headerBackBtn" title="Back to Dashboard" style="display: none;">
@@ -725,6 +745,26 @@
                 </svg>
               </div>
             </div>
+
+            <!-- Android APK Download Row -->
+            <div class="clay-item-row clickable" id="apkInfoRow">
+              <div class="clay-item-left">
+                <div class="clay-icon-bubble green">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="5" y="2" width="14" height="20" rx="3" ry="3"></rect>
+                    <line x1="12" y1="18" x2="12.01" y2="18"></line>
+                  </svg>
+                </div>
+                <div class="clay-item-details">
+                  <div class="clay-item-name">Macroly Android APK</div>
+                  <div class="clay-item-meta">APK update will be given soon</div>
+                </div>
+              </div>
+              <div class="clay-item-right">
+                <span class="recalc-badge-pill" style="font-size: 11px; padding: 3px 8px;">Soon</span>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -1020,7 +1060,7 @@
   </div>
 
   <script src="/static/js/api.js?v=3.5"></script>
-  <script src="/static/js/app.js?v=3.5"></script>
+  <script src="/static/js/app.js?v=3.6"></script>
 </body>
 
 </html>
