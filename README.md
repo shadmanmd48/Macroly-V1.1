@@ -8,25 +8,15 @@ Macroly transforms daily nutrition tracking from a tedious chore into an effortl
 
 ## 🌟 Key Features
 
-- **Natural Language Food Logging**: Log meals naturally (e.g., *"3 butter naan, chicken curry with approx 20g chicken, and 250ml milk"*). The backend parses items, portions, metric units, and modifiers instantly.
-- **Multi-Item Isolation & Metric Parsing**:
-  - Automatically isolates multiple items connected by `"and"`, `","`, `"&"`, or `"+"` so quantities never leak between items.
-  - Direct metric volume (`250ml`, `500ml`) and weight (`100g`, `20g`) parsing with linear nutrient scaling.
-- **Approximation & Ingredient Modifier Intelligence**:
-  - Handles conversational qualifiers (*"approx"*, *"roughly"*, *"around"*, *"about"*).
-  - Accurately resolves compound modifiers (e.g. *"curry with 20g chicken"*) by computing gravy base plus exact meat portion rather than double-counting full portions.
-- **Intent Classification Guard**:
-  - Non-food chit-chat (*"hi"*, *"thanks"*) is answered conversationally with zero meals logged and zero database clutter.
-  - Questions like *"what's my calorie goal today?"* return personalized targets directly from user profiles.
-- **Multi-Tiered Nutrition Engine**:
-  - **Smart Cache**: Instant sub-5ms lookup for recurring and common food items with exact-match precedence.
-  - **CalorieNinjas Live API**: Real-time access to verified nutritional databases with header-based authentication &mdash; zero IP locks on dynamic server environments like Railway.
-  - **Groq LLM (`llama-3.3-70b-versatile` / `qwen/qwen3.8-27b`)**: Contextual recipe decomposition and macro estimation for complex meals, backed by a deterministic safety fallback.
-- **Conversational Corrections & Deletions**: Quickly adjust previous entries (e.g., *"Actually make that 2 rotis, not 3"*) or delete items (*"remove the dal"*) with real-time calorie delta feedback.
-- **Real-Time Macro Dashboard**: Visual progress rings tracking daily Calories, Protein, Carbohydrates, and Fats against personalized targets.
-- **Workout & Activity Tracking**: Log strength and cardiovascular sessions with automatic caloric expenditure calculation.
-- **Secure Multi-User Authentication**: Production-ready authentication supporting both Email/Password credentials and Google OAuth via Supabase, with automatic database multi-tenancy.
-- **Offline & Local Development Resilience**: Seamless automated failover from hosted PostgreSQL to local SQLite if network connectivity is interrupted.
+- **Conversational Food Logging**: Log meals naturally (e.g., *"2 boiled eggs, 200g rice, and chicken curry"*) with instant portion parsing and nutritional calculation.
+- **Smart Meal Categorization**: Guided classification into Breakfast, Lunch, Snacks, Cheat Meal, or Dinner with dynamic prompts.
+- **Real-Time Macro Dashboard**: Visual progress rings tracking daily calories, protein, carbs, and fats against personalized targets.
+- **Conversational Corrections & Deletions**: Adjust quantities (e.g., *"Make that 3 rotis actually"*) or remove meals directly from chat with instant macro recalculation.
+- **Daily History & Auto-Rollover**: Automatic midnight (IST) archival and historical daily macro logs to monitor long-term trends.
+- **Vitals & Goal Customization**: Manage personal profile vitals (height, weight, target weight) alongside daily macro goals.
+- **Multi-Tier Nutrition Engine**: High-speed hybrid architecture pairing local smart caching, verified nutrition databases, and LLM recipe decomposition.
+- **Secure Multi-User Authentication**: Multi-tenant isolation supporting Email/Password and Google OAuth via Supabase.
+- **Offline & Local Resilience**: Seamless automatic fallback from cloud PostgreSQL to local SQLite for uninterrupted development.
 
 ---
 
@@ -54,7 +44,8 @@ Macroly/
 │   ├── main.py               # FastAPI application routes, middleware, and lifecycle
 │   ├── models.py             # Pydantic schemas for requests, responses, and user profiles
 │   ├── nutrition_service.py  # CalorieNinjas API integration and nutrient scaling
-│   └── smart_cache.py        # High-performance food caching and macro scaling
+│   ├── smart_cache.py        # High-performance food caching and macro scaling
+│   └── tests/                # Automated feature and multi-user isolation test suite
 ├── frontend/
 │   ├── assets/               # Demo avatars and culinary imagery
 │   ├── css/
