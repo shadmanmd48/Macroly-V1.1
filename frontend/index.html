@@ -471,26 +471,29 @@
           <h2 class="clay-profile-title" id="profileDisplayName">User Profile</h2>
           <span class="clay-profile-subtitle" id="profileEmail">Loading account...</span>
 
-          <!-- Vitals Dual Sub-Cards Grid -->
+          <!-- Vitals Dual Sub-Cards Grid (Click to edit) -->
           <div class="clay-vitals-grid">
-            <div class="clay-vital-subcard">
+            <div class="clay-vital-subcard clickable" id="vitalsWeightSubcard" title="Click to update weight">
               <span class="clay-vital-title">WEIGHT</span>
               <div class="clay-vital-num-row">
                 <span class="clay-vital-num" id="profileWeightVal">64.2</span>
                 <span class="clay-vital-unit">kg</span>
               </div>
-              <span class="clay-vital-target-green">Goal: 62.0</span>
+              <span class="clay-vital-target-green" id="profileGoalWeightVal">Goal: 62.0</span>
+              <span class="vital-edit-hint">Tap to edit ✎</span>
             </div>
 
-            <div class="clay-vital-subcard">
+            <div class="clay-vital-subcard clickable" id="vitalsHeightSubcard" title="Click to update height">
               <span class="clay-vital-title">HEIGHT</span>
               <div class="clay-vital-num-row">
-                <span class="clay-vital-num">172</span>
+                <span class="clay-vital-num" id="profileHeightVal">172</span>
                 <span class="clay-vital-unit">cm</span>
               </div>
-              <span class="clay-vital-target-muted">BMI 21.7</span>
+              <span class="clay-vital-target-muted" id="profileBmiVal">BMI 21.7</span>
+              <span class="vital-edit-hint">Tap to edit ✎</span>
             </div>
           </div>
+          <button type="button" class="clay-action-link" id="editVitalsBtn" style="margin-top: 10px; font-weight: 700;">Edit Height & Weight</button>
         </div>
 
         <!-- 2. DAILY NUTRITION GOALS Section -->
@@ -517,6 +520,33 @@
                 <span class="goal-stat-label">Fats</span>
                 <span class="goal-stat-val text-fats" id="profileGoalFatVal">65 <small>g</small></span>
               </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. DAILY NUTRITION HISTORY Section -->
+        <div class="clay-group-section">
+          <div class="clay-group-header-row">
+            <span class="clay-group-title">DAILY NUTRITION HISTORY</span>
+            <button type="button" class="clay-action-link" id="viewHistoryBtn">View All</button>
+          </div>
+          <div class="clay-card-wrapper clay-item-row clickable" id="historyCardRow" title="View past daily macros & calorie logs">
+            <div class="clay-item-left">
+              <div class="clay-icon-bubble mint">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 8v4l3 3"></path>
+                  <circle cx="12" cy="12" r="9"></circle>
+                </svg>
+              </div>
+              <div class="clay-item-details">
+                <div class="clay-item-name">Intake & Macros History</div>
+                <div class="clay-item-meta" id="historySubLabel">Daily calories, protein, carbs & fat records</div>
+              </div>
+            </div>
+            <div class="clay-item-right">
+              <svg class="clay-chevron-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="9 18 15 12 9 6"></polyline>
+              </svg>
             </div>
           </div>
         </div>
@@ -945,6 +975,112 @@
         </div>
 
         <button class="modal-save-btn" id="modalSaveGoalsBtn">Save Nutrition Targets</button>
+      </div>
+    </div>
+
+    <!-- Edit User Vitals Modal (Multi-user Height & Weight) -->
+    <div class="modal-backdrop" id="vitalsModal">
+      <div class="modal-sheet">
+        <div class="modal-drag-pill"></div>
+        <div class="modal-title-row">
+          <h3 class="modal-title">Update Height & Weight</h3>
+          <button class="modal-close-btn" id="vitalsModalCloseBtn">&times;</button>
+        </div>
+        <p style="font-size:12px; color:var(--text-muted); margin-bottom: 14px;">
+          Set your body metrics. Values are isolated to your user account and dynamically update your BMI.
+        </p>
+
+        <div class="onboard-grid" style="margin-bottom: 14px;">
+          <div class="onboard-input-box">
+            <label class="onboard-label">Height (cm)</label>
+            <input type="number" class="onboard-input" id="modalVitalsHeight" placeholder="172" min="80" max="250" step="0.5">
+          </div>
+          <div class="onboard-input-box">
+            <label class="onboard-label">Current Weight (kg)</label>
+            <input type="number" class="onboard-input" id="modalVitalsWeight" placeholder="64.2" min="30" max="300" step="0.1">
+          </div>
+          <div class="onboard-input-box" style="grid-column: span 2;">
+            <label class="onboard-label">Goal / Target Weight (kg)</label>
+            <input type="number" class="onboard-input" id="modalVitalsTargetWeight" placeholder="62.0" min="30" max="300" step="0.1">
+          </div>
+        </div>
+
+        <div style="background: var(--bg-app); border: 1px solid var(--border-card); border-radius: 12px; padding: 10px 14px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between;">
+          <span style="font-size: 12px; font-weight: 600; color: var(--text-muted);">Estimated BMI</span>
+          <span style="font-size: 14px; font-weight: 800; color: #10b981;" id="modalLiveBmi">--</span>
+        </div>
+
+        <button class="modal-save-btn" id="modalSaveVitalsBtn">Save Body Vitals</button>
+      </div>
+    </div>
+
+    <!-- Day Transition Pop-Up Modal (IST Midnight Rollover) -->
+    <div class="modal-backdrop" id="dayTransitionModal">
+      <div class="modal-sheet">
+        <div class="modal-drag-pill"></div>
+        <div class="modal-title-row">
+          <h3 class="modal-title">Welcome to a New Day! 🌅</h3>
+          <button class="modal-close-btn" id="dayTransitionCloseBtn">&times;</button>
+        </div>
+        <p style="font-size:12.5px; color:var(--text-muted); line-height: 1.4;">
+          Midnight has passed (Indian Standard Time). Here is how much you consumed yesterday:
+        </p>
+
+        <div class="day-transition-card">
+          <div class="day-transition-header">
+            <span class="day-transition-badge">Yesterday's Intake</span>
+            <span class="day-transition-date" id="transitionYesterdayDate">Yesterday</span>
+          </div>
+
+          <div class="day-intake-stat-grid">
+            <div class="day-stat-box">
+              <span class="day-stat-label">Calories</span>
+              <span class="day-stat-value" id="transitionYesterdayCals">0 <small>kcal</small></span>
+            </div>
+            <div class="day-stat-box">
+              <span class="day-stat-label">Meals Logged</span>
+              <span class="day-stat-value" id="transitionYesterdayMeals">0 <small>meals</small></span>
+            </div>
+            <div class="day-stat-box">
+              <span class="day-stat-label">Protein</span>
+              <span class="day-stat-value text-protein" id="transitionYesterdayProtein">0 <small>g</small></span>
+            </div>
+            <div class="day-stat-box">
+              <span class="day-stat-label">Carbs</span>
+              <span class="day-stat-value text-carbs" id="transitionYesterdayCarbs">0 <small>g</small></span>
+            </div>
+            <div class="day-stat-box" style="grid-column: span 2;">
+              <span class="day-stat-label">Fats</span>
+              <span class="day-stat-value text-fats" id="transitionYesterdayFats">0 <small>g</small></span>
+            </div>
+          </div>
+        </div>
+
+        <button class="btn-start-new-day" id="startNewDayBtn">
+          <span>🌅</span>
+          <span>Start New Day (Reset Today's Values)</span>
+        </button>
+        <p style="font-size:11px; text-align:center; color:var(--text-muted); margin-top:8px;">
+          Tapping Start New Day archives yesterday's intake to your history and resets today's tracking to 0.
+        </p>
+      </div>
+    </div>
+
+    <!-- Daily Nutrition History Modal -->
+    <div class="modal-backdrop" id="historyModal">
+      <div class="modal-sheet">
+        <div class="modal-drag-pill"></div>
+        <div class="modal-title-row">
+          <h3 class="modal-title">Daily Nutrition History</h3>
+          <button class="modal-close-btn" id="historyModalCloseBtn">&times;</button>
+        </div>
+        <p style="font-size:12px; color:var(--text-muted);">
+          Your past daily records of Calories, Protein, Carbs, and Fats archived automatically at midnight IST:
+        </p>
+
+        <div class="history-items-container" id="historyModalList">
+          <div class="history-empty-placeholder">Loading history...</div>
+        </div>
       </div>
     </div>
 

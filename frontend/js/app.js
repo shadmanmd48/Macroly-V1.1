@@ -191,13 +191,19 @@ document.addEventListener("DOMContentLoaded", () => {
     if (isDark) {
       document.documentElement.setAttribute("data-theme", "dark");
       document.body.classList.add("dark-theme");
-      if (themeToggleSwitch) themeToggleSwitch.style.background = "#10b981";
-      if (slider) slider.style.transform = "translateX(18px)";
+      if (themeToggleSwitch) {
+        themeToggleSwitch.classList.add("dark-active");
+        themeToggleSwitch.style.background = "#10b981";
+      }
+      if (slider) slider.style.transform = "translateX(20px)";
       if (appearanceSubLabel) appearanceSubLabel.textContent = "Soft Dark Mode (Active)";
     } else {
       document.documentElement.setAttribute("data-theme", "light");
       document.body.classList.remove("dark-theme");
-      if (themeToggleSwitch) themeToggleSwitch.style.background = "#f1f5f9";
+      if (themeToggleSwitch) {
+        themeToggleSwitch.classList.remove("dark-active");
+        themeToggleSwitch.style.background = "#e2e8f0";
+      }
       if (slider) slider.style.transform = "translateX(0px)";
       if (appearanceSubLabel) appearanceSubLabel.textContent = "Soft Clay Light Mode";
     }
@@ -316,14 +322,19 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   if (editProfileBtn) {
-    editProfileBtn.addEventListener("click", () => {
-      const newWeight = prompt("Update current weight (kg):", "64.2");
-      if (newWeight && !isNaN(parseFloat(newWeight))) {
-        const pw = document.getElementById("profileWeightVal");
-        if (pw) pw.textContent = parseFloat(newWeight).toFixed(1);
-        if (weightVal) weightVal.innerHTML = `${parseFloat(newWeight).toFixed(1)} <span class="vital-sub-val">kg</span>`;
-      }
-    });
+    editProfileBtn.addEventListener("click", () => openVitalsModal());
+  }
+  const editVitalsBtn = document.getElementById("editVitalsBtn");
+  if (editVitalsBtn) {
+    editVitalsBtn.addEventListener("click", () => openVitalsModal());
+  }
+  const vitalsWeightSubcard = document.getElementById("vitalsWeightSubcard");
+  if (vitalsWeightSubcard) {
+    vitalsWeightSubcard.addEventListener("click", () => openVitalsModal());
+  }
+  const vitalsHeightSubcard = document.getElementById("vitalsHeightSubcard");
+  if (vitalsHeightSubcard) {
+    vitalsHeightSubcard.addEventListener("click", () => openVitalsModal());
   }
 
   if (resetDataBtn) {
@@ -395,9 +406,23 @@ document.addEventListener("DOMContentLoaded", () => {
     weightVal.innerHTML = `${data.vitals.weight_kg} <span class="vital-sub-val">kg</span>`;
 
     const profileWeight = document.getElementById("profileWeightVal");
-    if (profileWeight && data.vitals && data.vitals.weight_kg) {
-      profileWeight.textContent = data.vitals.weight_kg;
+    const profileHeight = document.getElementById("profileHeightVal");
+    const profileGoalWeight = document.getElementById("profileGoalWeightVal");
+    const profileBmi = document.getElementById("profileBmiVal");
+
+    if (data.vitals) {
+      const w = parseFloat(data.vitals.weight_kg) || 64.2;
+      const h = parseFloat(data.vitals.height_cm) || 172.0;
+      const gw = parseFloat(data.vitals.target_weight_kg) || 62.0;
+      const hM = h / 100;
+      const bmiVal = (hM > 0) ? (w / (hM * hM)) : 21.7;
+
+      if (profileWeight) profileWeight.textContent = w.toFixed(1);
+      if (profileHeight) profileHeight.textContent = Math.round(h);
+      if (profileGoalWeight) profileGoalWeight.textContent = `Goal: ${gw.toFixed(1)}`;
+      if (profileBmi) profileBmi.textContent = `BMI ${bmiVal.toFixed(1)}`;
     }
+
     const profileSavedMeals = document.getElementById("profileSavedMealsCount");
     if (profileSavedMeals && data.meals) {
       profileSavedMeals.textContent = `${data.meals.length} custom meals logged`;
@@ -415,6 +440,18 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (userGreeting && data.greeting) {
       userGreeting.innerHTML = data.greeting.replace(", ", ",<br>");
+    }
+    const dateSubtitle = document.getElementById("dateSubtitle");
+    if (dateSubtitle) {
+      try {
+        const istFormatter = new Intl.DateTimeFormat("en-US", {
+          timeZone: "Asia/Kolkata",
+          weekday: "long",
+          month: "short",
+          day: "numeric"
+        });
+        dateSubtitle.textContent = istFormatter.format(new Date()).toUpperCase();
+      } catch (e) {}
     }
     if (profileDisplayName && data.user_name) {
       profileDisplayName.textContent = data.user_name;
@@ -460,7 +497,7 @@ document.addEventListener("DOMContentLoaded", () => {
             <img src="${thumbSrc}" alt="${meal.title}" onerror="this.src='/static/assets/quinoa_bowl.jpg'">
           </div>
           <div class="meal-card-details">
-            <div class="meal-time-tag">${meal.subtitle || meal.meal_type}</div>
+            <div class="meal-time-tag">${meal.meal_type}${meal.subtitle ? ` • ${meal.subtitle.replace(new RegExp('^' + meal.meal_type + '\\s*(?:•\\s*)?', 'i'), '').trim()}` : ""}</div>
             <div class="meal-item-name">${meal.title}</div>
             <div class="meal-item-cals">${meal.total_calories} kcal</div>
           </div>
@@ -476,6 +513,14 @@ document.addEventListener("DOMContentLoaded", () => {
                 <line x1="1" y1="14" x2="7" y2="14"/>
                 <line x1="9" y1="8" x2="15" y2="8"/>
                 <line x1="17" y1="16" x2="23" y2="16"/>
+              </svg>
+            </button>
+            <button class="meal-action-btn delete-meal-trigger" data-id="${meal.id}" title="Delete meal">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="3 6 5 6 21 6"></polyline>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                <line x1="10" y1="11" x2="10" y2="17"></line>
+                <line x1="14" y1="11" x2="14" y2="17"></line>
               </svg>
             </button>
           </div>
@@ -499,6 +544,21 @@ document.addEventListener("DOMContentLoaded", () => {
       card.querySelector(".edit-meal-trigger").addEventListener("click", () => {
         openOverrideModal(meal);
       });
+
+      const deleteBtn = card.querySelector(".delete-meal-trigger");
+      if (deleteBtn) {
+        deleteBtn.addEventListener("click", async (e) => {
+          e.stopPropagation();
+          if (confirm(`Remove "${meal.title}" from today's log?`)) {
+            try {
+              await api.deleteMeal(meal.id);
+              await refreshDashboard();
+            } catch (err) {
+              alert("Failed to delete meal: " + err.message);
+            }
+          }
+        });
+      }
 
       mealsListContainer.appendChild(card);
     });
@@ -573,6 +633,231 @@ document.addEventListener("DOMContentLoaded", () => {
         modalSaveGoalsBtn.disabled = false;
         modalSaveGoalsBtn.textContent = "Save Nutrition Targets";
       }
+    });
+  }
+
+  // ================= USER VITALS (HEIGHT & WEIGHT) MODAL =================
+  const vitalsModal = document.getElementById("vitalsModal");
+  const vitalsModalCloseBtn = document.getElementById("vitalsModalCloseBtn");
+  const modalSaveVitalsBtn = document.getElementById("modalSaveVitalsBtn");
+  const modalVitalsHeight = document.getElementById("modalVitalsHeight");
+  const modalVitalsWeight = document.getElementById("modalVitalsWeight");
+  const modalVitalsTargetWeight = document.getElementById("modalVitalsTargetWeight");
+  const modalLiveBmi = document.getElementById("modalLiveBmi");
+
+  function updateLiveBmi() {
+    const h = parseFloat(modalVitalsHeight ? modalVitalsHeight.value : 172) || 172;
+    const w = parseFloat(modalVitalsWeight ? modalVitalsWeight.value : 64) || 64;
+    const hM = h / 100;
+    const bmi = (hM > 0) ? (w / (hM * hM)) : 21.7;
+    let cat = "Normal";
+    if (bmi < 18.5) cat = "Underweight";
+    else if (bmi >= 25 && bmi < 30) cat = "Overweight";
+    else if (bmi >= 30) cat = "Obese";
+    if (modalLiveBmi) modalLiveBmi.textContent = `${bmi.toFixed(1)} (${cat})`;
+  }
+
+  function openVitalsModal() {
+    if (!vitalsModal) return;
+    const v = (latestDashboardData && latestDashboardData.vitals) ? latestDashboardData.vitals : {};
+    const curH = v.height_cm || (currentUserProfile && currentUserProfile.height_cm) || 172.0;
+    const curW = v.weight_kg || (currentUserProfile && currentUserProfile.weight_kg) || 64.2;
+    const curGoalW = v.target_weight_kg || (currentUserProfile && currentUserProfile.target_weight_kg) || 62.0;
+
+    if (modalVitalsHeight) modalVitalsHeight.value = curH;
+    if (modalVitalsWeight) modalVitalsWeight.value = curW;
+    if (modalVitalsTargetWeight) modalVitalsTargetWeight.value = curGoalW;
+    updateLiveBmi();
+
+    vitalsModal.classList.add("open");
+  }
+
+  function closeVitalsModal() {
+    if (vitalsModal) vitalsModal.classList.remove("open");
+  }
+
+  if (vitalsModalCloseBtn) {
+    vitalsModalCloseBtn.addEventListener("click", closeVitalsModal);
+  }
+  if (vitalsModal) {
+    vitalsModal.addEventListener("click", (e) => {
+      if (e.target === vitalsModal) closeVitalsModal();
+    });
+  }
+  if (modalVitalsHeight) modalVitalsHeight.addEventListener("input", updateLiveBmi);
+  if (modalVitalsWeight) modalVitalsWeight.addEventListener("input", updateLiveBmi);
+
+  if (modalSaveVitalsBtn) {
+    modalSaveVitalsBtn.addEventListener("click", async () => {
+      const h = parseFloat(modalVitalsHeight.value) || 172.0;
+      const w = parseFloat(modalVitalsWeight.value) || 64.2;
+      const targetW = parseFloat(modalVitalsTargetWeight.value) || 62.0;
+
+      modalSaveVitalsBtn.disabled = true;
+      modalSaveVitalsBtn.textContent = "Saving Vitals...";
+
+      try {
+        const res = await api.updateVitals({
+          height_cm: h,
+          weight_kg: w,
+          target_weight_kg: targetW
+        });
+        closeVitalsModal();
+        if (res.dashboard) {
+          renderDashboardData(res.dashboard);
+        } else {
+          await refreshDashboard();
+        }
+      } catch (err) {
+        alert("Failed to update vitals: " + err.message);
+      } finally {
+        modalSaveVitalsBtn.disabled = false;
+        modalSaveVitalsBtn.textContent = "Save Body Vitals";
+      }
+    });
+  }
+
+  // ================= DAY TRANSITION (IST 12:00 AM ROLLOVER) =================
+  const dayTransitionModal = document.getElementById("dayTransitionModal");
+  const dayTransitionCloseBtn = document.getElementById("dayTransitionCloseBtn");
+  const startNewDayBtn = document.getElementById("startNewDayBtn");
+  const transitionYesterdayDate = document.getElementById("transitionYesterdayDate");
+  const transitionYesterdayCals = document.getElementById("transitionYesterdayCals");
+  const transitionYesterdayMeals = document.getElementById("transitionYesterdayMeals");
+  const transitionYesterdayProtein = document.getElementById("transitionYesterdayProtein");
+  const transitionYesterdayCarbs = document.getElementById("transitionYesterdayCarbs");
+  const transitionYesterdayFats = document.getElementById("transitionYesterdayFats");
+
+  async function checkDayTransition() {
+    if (!api.getAuthToken()) return;
+    try {
+      const status = await api.getDayStatus();
+      if (status && status.show_transition && status.yesterday_summary) {
+        const s = status.yesterday_summary;
+        if (transitionYesterdayDate) transitionYesterdayDate.textContent = s.date || "Yesterday";
+        if (transitionYesterdayCals) transitionYesterdayCals.innerHTML = `${Math.round(s.calories || 0)} <small>kcal</small>`;
+        if (transitionYesterdayMeals) transitionYesterdayMeals.innerHTML = `${s.meals_count || 0} <small>meals</small>`;
+        if (transitionYesterdayProtein) transitionYesterdayProtein.innerHTML = `${Math.round(s.protein || 0)} <small>g</small>`;
+        if (transitionYesterdayCarbs) transitionYesterdayCarbs.innerHTML = `${Math.round(s.carbs || 0)} <small>g</small>`;
+        if (transitionYesterdayFats) transitionYesterdayFats.innerHTML = `${Math.round(s.fats || 0)} <small>g</small>`;
+
+        if (dayTransitionModal) dayTransitionModal.classList.add("open");
+      }
+    } catch (e) {
+      console.warn("Day status check error:", e);
+    }
+  }
+
+  function closeDayTransitionModal() {
+    if (dayTransitionModal) dayTransitionModal.classList.remove("open");
+  }
+
+  if (dayTransitionCloseBtn) {
+    dayTransitionCloseBtn.addEventListener("click", closeDayTransitionModal);
+  }
+  if (dayTransitionModal) {
+    dayTransitionModal.addEventListener("click", (e) => {
+      if (e.target === dayTransitionModal) closeDayTransitionModal();
+    });
+  }
+
+  if (startNewDayBtn) {
+    startNewDayBtn.addEventListener("click", async () => {
+      startNewDayBtn.disabled = true;
+      startNewDayBtn.textContent = "Starting New Day...";
+      try {
+        await api.startNewDay();
+        closeDayTransitionModal();
+        await refreshDashboard();
+      } catch (err) {
+        alert("Failed to start new day: " + err.message);
+      } finally {
+        startNewDayBtn.disabled = false;
+        startNewDayBtn.innerHTML = `<span>🌅</span><span>Start New Day (Reset Today's Values)</span>`;
+      }
+    });
+  }
+
+  // Check transition on window focus & visibility
+  window.addEventListener("focus", checkDayTransition);
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") checkDayTransition();
+  });
+
+  // ================= DAILY NUTRITION HISTORY MODAL =================
+  const historyModal = document.getElementById("historyModal");
+  const historyModalCloseBtn = document.getElementById("historyModalCloseBtn");
+  const viewHistoryBtn = document.getElementById("viewHistoryBtn");
+  const historyCardRow = document.getElementById("historyCardRow");
+  const historyModalList = document.getElementById("historyModalList");
+
+  async function openHistoryModal() {
+    if (!historyModal) return;
+    historyModal.classList.add("open");
+    if (historyModalList) {
+      historyModalList.innerHTML = `<div class="history-empty-placeholder">Loading nutrition history...</div>`;
+    }
+
+    try {
+      const history = await api.getUserHistory();
+      if (!historyModalList) return;
+
+      if (!history || history.length === 0) {
+        historyModalList.innerHTML = `
+          <div class="history-empty-placeholder">
+            <div style="font-size:26px; margin-bottom:6px;">📅</div>
+            <b>No daily records yet</b><br>
+            Every midnight (IST), your active meals and macros will be summarized and archived here automatically!
+          </div>
+        `;
+        return;
+      }
+
+      historyModalList.innerHTML = history.map(item => `
+        <div class="history-day-card">
+          <div class="history-day-header">
+            <span class="history-date-badge">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2.5"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+              ${item.date_str}
+            </span>
+            <span class="history-cals-badge">${Math.round(item.calories)} kcal</span>
+          </div>
+          <div class="history-macro-pills-row">
+            <span class="history-macro-chip">
+              <span class="dot-indicator dot-protein"></span>
+              Protein: <b>${Math.round(item.protein)}g</b>
+            </span>
+            <span class="history-macro-chip">
+              <span class="dot-indicator dot-carbs"></span>
+              Carbs: <b>${Math.round(item.carbs)}g</b>
+            </span>
+            <span class="history-macro-chip">
+              <span class="dot-indicator dot-fats"></span>
+              Fats: <b>${Math.round(item.fats)}g</b>
+            </span>
+            <span class="history-macro-chip" style="color:var(--text-muted);">
+              ${item.meals_count} meals
+            </span>
+          </div>
+        </div>
+      `).join("");
+    } catch (err) {
+      if (historyModalList) {
+        historyModalList.innerHTML = `<div class="history-empty-placeholder" style="color:#ef4444;">Failed to load history: ${err.message}</div>`;
+      }
+    }
+  }
+
+  function closeHistoryModal() {
+    if (historyModal) historyModal.classList.remove("open");
+  }
+
+  if (viewHistoryBtn) viewHistoryBtn.addEventListener("click", openHistoryModal);
+  if (historyCardRow) historyCardRow.addEventListener("click", openHistoryModal);
+  if (historyModalCloseBtn) historyModalCloseBtn.addEventListener("click", closeHistoryModal);
+  if (historyModal) {
+    historyModal.addEventListener("click", (e) => {
+      if (e.target === historyModal) closeHistoryModal();
     });
   }
 
@@ -1058,7 +1343,7 @@ document.addEventListener("DOMContentLoaded", () => {
           <div class="chat-meal-heading">${m.title || m.food_name || "Custom Meal"}</div>
           <div class="chat-meal-badges-line">
             <span class="tag-meal-type">${m.meal_type}</span>
-            ${m.subtitle ? `<span class="tag-meal-subtitle">• ${m.subtitle}</span>` : ""}
+            ${m.subtitle ? `<span class="tag-meal-subtitle">• ${m.subtitle.replace(new RegExp('^' + m.meal_type + '\\s*(?:•\\s*)?', 'i'), '').trim()}</span>` : ""}
           </div>
           <div class="chat-meal-cals-big">
             ${m.total_calories} <span>kcal</span>
@@ -1084,8 +1369,47 @@ document.addEventListener("DOMContentLoaded", () => {
       `;
     }
 
+    if (msg.meal_prompt) {
+      const options = msg.options && msg.options.length ? msg.options : ["Breakfast", "Lunch", "Snacks", "Cheat Meal", "Dinner"];
+      innerHtml += `
+        <div class="meal-prompt-container">
+          <div class="meal-prompt-label">Select Meal Category:</div>
+          <div class="meal-prompt-buttons-row">
+            ${options.map(opt => {
+              let emoji = "🍽️";
+              if (opt.toLowerCase().includes("breakfast")) emoji = "🍳";
+              else if (opt.toLowerCase().includes("lunch")) emoji = "🍛";
+              else if (opt.toLowerCase().includes("snack")) emoji = "🍎";
+              else if (opt.toLowerCase().includes("cheat")) emoji = "🍕";
+              else if (opt.toLowerCase().includes("dinner")) emoji = "🍲";
+              return `<button type="button" class="meal-prompt-btn" data-meal="${opt}">${emoji} ${opt}</button>`;
+            }).join("")}
+          </div>
+        </div>
+      `;
+    }
+
+    if (msg.deleted_meal_id || msg.type === "meal_deleted") {
+      innerHtml += `
+        <div style="margin-top: 8px; display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.25); border-radius: 12px; color: #dc2626; font-size: 12px; font-weight: 700;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+          Meal removed directly from logging area
+        </div>
+      `;
+    }
+
     aiWrap.innerHTML = innerHtml;
     chatMessagesContainer.appendChild(aiWrap);
+
+    // Wire category prompt buttons
+    aiWrap.querySelectorAll(".meal-prompt-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const mealChoice = btn.getAttribute("data-meal");
+        if (mealChoice) {
+          handleSendMessage(mealChoice);
+        }
+      });
+    });
 
     if (msg.meal_data) {
       const editBtn = document.getElementById(`edit_${msg.meal_data.id}`);
@@ -1118,16 +1442,22 @@ document.addEventListener("DOMContentLoaded", () => {
       const messageToRender = aiResponse.message || aiResponse;
       appendAIMessage(messageToRender);
       scrollChatToBottom(true);
+      if (aiResponse.suggestions && aiResponse.suggestions.length) {
+        updateSuggestionChips(aiResponse.suggestions);
+      }
       if (aiResponse.dashboard) {
         renderDashboardData(aiResponse.dashboard);
       } else {
         await refreshDashboard();
       }
     } catch (e) {
-      console.error(e);
+      console.error("Chat message error:", e);
       hideAiLoadingBubble();
+      const errorMsg = (e && e.message && (e.message.includes("Failed to fetch") || e.message.includes("NetworkError")))
+        ? "Unable to connect to Macroly backend server. Please check your connection or ensure the server is running."
+        : "Sorry, I had trouble processing that. Please try again!";
       appendAIMessage({
-        text: "Sorry, I had trouble processing that. Please try again!",
+        text: errorMsg,
         sender: "ai"
       });
       scrollChatToBottom(true);
@@ -1158,13 +1488,25 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  // Quick suggestion chips
-  document.querySelectorAll(".suggestion-chip").forEach(chip => {
-    chip.addEventListener("click", () => {
-      const text = chip.dataset.text || chip.textContent;
-      handleSendMessage(text);
+  // Dynamic Suggestion Chips
+  function updateSuggestionChips(suggestions) {
+    const chipsScroll = document.querySelector(".quick-chips-scroll");
+    if (!chipsScroll || !suggestions || !suggestions.length) return;
+    chipsScroll.innerHTML = suggestions.map(s => 
+      `<button class="suggestion-chip" data-text="${s}">${s}</button>`
+    ).join("");
+    wireSuggestionChips();
+  }
+
+  function wireSuggestionChips() {
+    document.querySelectorAll(".suggestion-chip").forEach(chip => {
+      chip.addEventListener("click", () => {
+        const text = chip.dataset.text || chip.textContent;
+        handleSendMessage(text);
+      });
     });
-  });
+  }
+  wireSuggestionChips();
 
   // Speech Recognition Integration
   function setupSpeech(micBtn, inputTarget) {
@@ -1382,6 +1724,7 @@ document.addEventListener("DOMContentLoaded", () => {
       renderDashboardData(dashboard);
       initMockupChatSeed();
       switchScreen("dashboard");
+      await checkDayTransition();
     } catch (e) {
       console.error("Post-auth profile fetch failed:", e);
       showAuthOverlay();

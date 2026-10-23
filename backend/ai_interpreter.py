@@ -56,6 +56,41 @@ FOOD_ACTION_VERBS = {
     "consumed", "consuming", "logged", "logging", "snacked", "devoured", "ordered"
 }
 
+VALID_MEAL_TYPES = ["Breakfast", "Lunch", "Snacks", "Cheat Meal", "Dinner"]
+
+def extract_explicit_meal_type(text: str) -> Optional[str]:
+    """Checks if text already contains an explicit category reference."""
+    text_lower = text.lower()
+    if re.search(r'\bcheat\s*meal\b', text_lower):
+        return "Cheat Meal"
+    elif re.search(r'\bbreakfast\b', text_lower):
+        return "Breakfast"
+    elif re.search(r'\blunch\b', text_lower):
+        return "Lunch"
+    elif re.search(r'\b(?:snacks?)\b', text_lower):
+        return "Snacks"
+    elif re.search(r'\bdinner\b', text_lower):
+        return "Dinner"
+    return None
+
+def is_category_selection(text: str) -> Optional[str]:
+    """Matches standalone category selections like 'Breakfast', '🌅 Breakfast', 'For Lunch', 'Cheat meal'."""
+    clean = re.sub(r'^[^\w\s]+', '', text.strip()).strip()
+    clean_lower = clean.lower()
+    clean_lower = re.sub(r'^(?:log\s+for|for|its|it\s+is|mark\s+as|set\s+to|into)\s+', '', clean_lower).strip()
+    clean_lower = re.sub(r'[\!\.\?]', '', clean_lower).strip()
+    if clean_lower in ["cheat meal", "cheat", "cheatmeal"]:
+        return "Cheat Meal"
+    elif clean_lower in ["breakfast", "brkfast"]:
+        return "Breakfast"
+    elif clean_lower in ["lunch"]:
+        return "Lunch"
+    elif clean_lower in ["snack", "snacks", "evening snack", "morning snack"]:
+        return "Snacks"
+    elif clean_lower in ["dinner", "supper"]:
+        return "Dinner"
+    return None
+
 class AIInterpreter:
     def __init__(self):
         self.groq_api_key = os.getenv("GROQ_API_KEY", "").strip()
@@ -63,6 +98,8 @@ class AIInterpreter:
         self.openai_api_key = os.getenv("OPENAI_API_KEY", "").strip()
         self.last_meal: Optional[MealLog] = None
         self.conversation_context: Dict[str, Any] = {}
+        # Multi-user isolated pending food logs waiting for category selection
+        self.pending_food_logs: Dict[str, Dict[str, Any]] = {}
 
     def classify_intent(self, user_text: str, current_meals: Optional[List[MealLog]] = None) -> str:
         """
@@ -77,9 +114,10 @@ class AIInterpreter:
         text_clean = user_text.strip()
         text_lower = text_clean.lower()
 
-        # 1. Obvious Deletion Heuristic (e.g. "remove the dal", "delete chicken", "drop the salad")
-        if re.search(r'\b(?:remove|delete|drop|cancel|clear)\s+(?:the\s+)?([a-zA-Z\s]+)', text_lower):
-            return INTENT_DELETION
+        # 1. Obvious Deletion Heuristic (e.g. "remove this meal", "delete my lunch", "remove dal", "delete chicken", "drop the salad")
+        if re.search(r'\b(?:remove|delete|drop|cancel|clear)\b', text_lower):
+            if not any(fw in text_lower for fw in ["workout", "goal", "calorie target"]):
+                return INTENT_DELETION
 
         # 2. Obvious Correction Heuristic (e.g. "make that 3 rotis", "actually 2 eggs", "change to 4 rotis")
         clean_punc = re.sub(r'[\!\.\?]', '', text_lower)
@@ -155,18 +193,49 @@ class AIInterpreter:
 
         return False
 
-    def process_message(self, user_text: str, current_meals: List[MealLog], context: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    def process_message(
+        self,
+        user_text: str,
+        current_meals: List[MealLog],
+        context: Optional[Dict[str, Any]] = None,
+        user_id: Optional[str] = None
+    ) -> Dict[str, Any]:
         """
         Main decision maker:
-        Runs fast intent classification first:
-          - 'deletion'
-          - 'correction'
-          - 'workout_log'
-          - 'not_food_related'
-          - 'food_log'
+        1. Checks if user is canceling a pending category prompt.
+        2. Checks if user is selecting a meal category for pending food.
+        3. Runs fast intent classification:
+           - 'deletion'
+           - 'correction'
+           - 'workout_log'
+           - 'not_food_related'
+           - 'food_log'
         """
+        if user_id:
+            context = context or {}
+            context["user_id"] = user_id
+        user_id = (context or {}).get("user_id") or "default"
+        clean_text = user_text.strip()
+        text_lower = clean_text.lower()
+
+        # 1. Cancel pending food log
+        if re.search(r'\b(?:cancel|never\s*mind|clear|abort|stop|don\'?t\s+log)\b', text_lower) and user_id in self.pending_food_logs:
+            self.pending_food_logs.pop(user_id, None)
+            return {
+                "intent": INTENT_NOT_FOOD_RELATED,
+                "type": "not_food_related",
+                "reply_text": "Cancelled! What else would you like to log or ask?"
+            }
+
+        # 2. Category selection for pending food log
+        selected_type = (context or {}).get("selected_meal_type") or is_category_selection(clean_text)
+        if selected_type and user_id in self.pending_food_logs:
+            pending = self.pending_food_logs.pop(user_id)
+            items = pending["items"]
+            return self._create_meal_from_items(items, selected_type, pending.get("text", user_text), context)
+
         intent = self.classify_intent(user_text, current_meals)
-        logger.info("🎯 [INTENT] Classified message as: '%s' -> %s", user_text, intent)
+        logger.info("🎯 [INTENT] Classified message as: '%s' -> %s (user: %s)", user_text, intent, user_id)
 
         if intent == INTENT_NOT_FOOD_RELATED:
             return self._handle_not_food_related(user_text, context)
@@ -227,7 +296,7 @@ class AIInterpreter:
             return {
                 "intent": INTENT_NOT_FOOD_RELATED,
                 "type": "not_food_related",
-                "reply_text": "I'm Macroly AI! You can tell me what you ate in natural language (e.g., 'Had 2 rotis with dal'), make corrections ('make that 3 rotis'), delete items ('remove the dal'), or log workouts ('ran for 30 mins'). What did you have today?"
+                "reply_text": "I'm Macroly AI! You can tell me what you ate in natural language (e.g., 'Had 2 rotis with dal'), choose a meal category (Breakfast, Lunch, Snacks, Cheat Meal, Dinner), delete meals ('remove this meal'), or log workouts ('ran for 30 mins'). What did you have today?"
             }
 
         # 6. General conversational fallback
@@ -238,19 +307,87 @@ class AIInterpreter:
         }
 
     def _handle_deletion(self, text: str, current_meals: List[MealLog]) -> Dict[str, Any]:
-        text_lower = text.lower()
-        last_meal = current_meals[-1] if current_meals else None
-        if not last_meal:
+        """
+        Handles deletion of entire meals or specific items from meals.
+        Supports:
+          - 'remove this meal', 'delete this meal', 'delete meal', 'remove last meal', 'delete that meal'
+          - 'delete my breakfast', 'remove lunch', 'delete dinner', 'remove snacks', 'delete cheat meal'
+          - 'remove [food_name]'
+        """
+        text_lower = text.lower().strip()
+        if not current_meals:
             return {
                 "intent": INTENT_DELETION,
                 "type": "deletion",
-                "reply_text": "I couldn't find any recent meals to delete items from. What did you eat today?",
+                "reply_text": "I couldn't find any logged meals to remove today. What did you eat?",
                 "meal": None
             }
 
+        # 1. Whole meal deletion heuristics:
+        # e.g., "remove this meal", "delete this meal", "delete meal", "remove meal", "remove last meal", "delete last meal", "delete that meal", "remove it"
+        is_whole_meal = bool(
+            re.search(r'\b(?:remove|delete|drop|cancel|clear)\s+(?:this|that|the|my|last)?\s*(?:entire\s+)?meal\b', text_lower) or
+            re.search(r'^(?:remove|delete|cancel|clear|drop)\s+(?:this|that|last|it)\b', text_lower)
+        )
+
+        # Category-specific deletion: e.g. "delete my breakfast", "remove lunch", "delete dinner", "remove snacks", "delete cheat meal"
+        cat_match = re.search(r'\b(?:remove|delete|clear|drop|cancel)\s+(?:the\s+|my\s+)?(breakfast|lunch|dinner|snacks?|cheat\s*meal)\b', text_lower)
+
+        def _get_m(obj, prop, default=""):
+            if hasattr(obj, prop):
+                return getattr(obj, prop)
+            if isinstance(obj, dict):
+                return obj.get(prop, default)
+            return default
+
+        if is_whole_meal or cat_match:
+            target_meal = None
+            if cat_match:
+                cat_term = cat_match.group(1).lower().replace(" ", "").rstrip("s")
+                for m in reversed(current_meals):
+                    m_type = _get_m(m, "meal_type", "").lower().replace(" ", "").rstrip("s")
+                    if cat_term in m_type:
+                        target_meal = m
+                        break
+            if not target_meal:
+                target_meal = current_meals[-1]
+
+            t_id = _get_m(target_meal, "id", "")
+            t_title = _get_m(target_meal, "title", "Custom Meal")
+            t_type = _get_m(target_meal, "meal_type", "Meal")
+            t_cals = _get_m(target_meal, "total_calories", 0)
+
+            logger.info("🗑️ [DELETION: Whole Meal] Deleting meal: %s (%s)", t_title, t_id)
+            return {
+                "intent": INTENT_DELETION,
+                "type": "meal_deleted",
+                "deleted_meal_id": t_id,
+                "deleted_meal_title": t_title,
+                "reply_text": f"Removed '{t_title}' ({t_type}, {t_cals} kcal) from your log."
+            }
+
+        # 2. Food name deletion
         remove_match = re.search(r'(?:remove|delete|drop|cancel|clear)\s+(?:the\s+)?([a-zA-Z\s]+)', text_lower)
         if remove_match:
             target_term = remove_match.group(1).strip()
+            # If target_term refers to a meal itself (e.g. "remove avocado toast")
+            for m in reversed(current_meals):
+                m_title = _get_m(m, "title", "")
+                m_id = _get_m(m, "id", "")
+                m_type = _get_m(m, "meal_type", "Meal")
+                m_cals = _get_m(m, "total_calories", 0)
+                if target_term in m_title.lower() or m_title.lower() in target_term:
+                    logger.info("🗑️ [DELETION: Meal by Title] Deleting meal: %s (%s)", m_title, m_id)
+                    return {
+                        "intent": INTENT_DELETION,
+                        "type": "meal_deleted",
+                        "deleted_meal_id": m_id,
+                        "deleted_meal_title": m_title,
+                        "reply_text": f"Removed '{m_title}' ({m_type}, {m_cals} kcal) from your log."
+                    }
+
+            # Search in last meal's items
+            last_meal = current_meals[-1]
             target_words = [w.rstrip('s') for w in target_term.split() if len(w.rstrip('s')) >= 3]
             for idx, item in enumerate(last_meal.items):
                 item_name_lower = item.name.lower()
@@ -261,6 +398,17 @@ class AIInterpreter:
                 )
                 if match_found:
                     removed_item = last_meal.items.pop(idx)
+                    # If no items left in meal, delete the entire meal
+                    if len(last_meal.items) == 0:
+                        logger.info("🗑️ [DELETION: Empty Meal] Last item removed from %s; deleting meal %s", last_meal.title, last_meal.id)
+                        return {
+                            "intent": INTENT_DELETION,
+                            "type": "meal_deleted",
+                            "deleted_meal_id": last_meal.id,
+                            "deleted_meal_title": last_meal.title,
+                            "reply_text": f"Removed {removed_item.name} and deleted {last_meal.meal_type} from your log."
+                        }
+
                     old_cal = last_meal.total_calories
                     last_meal.total_calories = sum(i.calories for i in last_meal.items)
                     last_meal.protein = round(sum(i.protein for i in last_meal.items), 1)
@@ -270,7 +418,7 @@ class AIInterpreter:
                     last_meal.recalculated = True
                     last_meal.recalc_delta_kcal = delta
 
-                    logger.info("🔄 [DELETION: Rule-Based] Removed %s from %s (%d kcal)", removed_item.name, last_meal.title, delta)
+                    logger.info("🔄 [DELETION: Item] Removed %s from %s (%d kcal)", removed_item.name, last_meal.title, delta)
                     return {
                         "intent": INTENT_DELETION,
                         "type": "deletion",
@@ -283,7 +431,7 @@ class AIInterpreter:
         return {
             "intent": INTENT_DELETION,
             "type": "deletion",
-            "reply_text": "I couldn't find that item in your recent meal to remove. What would you like to update?",
+            "reply_text": "I couldn't find that item or meal to remove. You can say 'remove this meal' to delete the latest meal.",
             "meal": None
         }
 
@@ -570,67 +718,45 @@ class AIInterpreter:
             logger.error("❌ [PARSER: Groq LLM] Groq API error: %s", e)
             return None
 
-    def _handle_food_log(self, text: str, context: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
-        """
-        Parses food items, portions, and meal category.
-        First attempts rule-based parser.
-        If rule-based fails or is not confident, falls back to Groq LLM.
-        Logs which parser was used to the terminal.
-        """
-        meal_type = self._infer_meal_type(text)
-
-        # 1. Attempt rule-based parsing first
-        rule_items, is_confident = self._parse_with_rules(text)
-
-        items: List[FoodItem] = []
-        parser_name = "Rule-Based"
-
-        if is_confident and rule_items:
-            items = rule_items
-            logger.info("🔍 [PARSER: Rule-Based] Successfully parsed '%s' -> %s", text, [f"{i.quantity}x {i.name}" for i in items])
-        else:
-            # 2. Rule-based not confident -> Fallback to Groq LLM
-            logger.info("⚠️ [PARSER: Rule-Based] Low confidence or complex phrasing for: '%s'. Calling Groq LLM fallback...", text)
-            groq_res = self._parse_with_groq(text)
-            if groq_res and groq_res.get("items"):
-                items = groq_res["items"]
-                meal_type = groq_res.get("meal_type") or meal_type
-                parser_name = "Groq LLM"
-                logger.info("🤖 [PARSER: Groq LLM] Successfully parsed '%s' -> %s", text, [f"{i.quantity}x {i.name}" for i in items])
-            elif rule_items:
-                items = rule_items
-                parser_name = "Rule-Based (Fallback)"
-                logger.warning("⚠️ [PARSER: Best Effort] Groq unavailable/failed. Using rule-based best effort for '%s' -> %s", text, [f"{i.quantity}x {i.name}" for i in items])
-            else:
-                # 3. Neither Groq nor rule-based identified any food items
-                logger.info("ℹ️ [INTENT] No food items identified by parsers for '%s' -> reclassifying to not_food_related", text)
-                return self._handle_not_food_related(text, context)
-
-        if not items:
-            return self._handle_not_food_related(text, context)
-
+    def _create_meal_from_items(
+        self,
+        items: List[FoodItem],
+        meal_type: str,
+        original_text: str,
+        context: Optional[Dict[str, Any]] = None
+    ) -> Dict[str, Any]:
+        """Creates a persistable MealLog with appropriate naming, breakdown and category."""
         total_cal = sum(i.calories for i in items)
         total_p = round(sum(i.protein for i in items), 1)
         total_c = round(sum(i.carbs for i in items), 1)
         total_f = round(sum(i.fats for i in items), 1)
 
-        # Generate friendly title & subtitle
         if len(items) >= 2:
             main_items = sorted(items, key=lambda x: x.calories, reverse=True)
             title = f"{main_items[0].name} & {int(main_items[1].quantity) if main_items[1].quantity.is_integer() else main_items[1].quantity} {main_items[1].name.split()[-1].title()}s" if "roti" in main_items[1].name.lower() else f"{main_items[0].name} & {main_items[1].name}"
-            if "roti" in text.lower():
+            if "roti" in original_text.lower():
                 curry_item = next((i for i in items if "curry" in i.name.lower() or "chicken" in i.name.lower()), None)
                 roti_item = next((i for i in items if "roti" in i.name.lower() or "chapati" in i.name.lower()), None)
                 if curry_item and roti_item:
                     title = f"{curry_item.name} & {int(roti_item.quantity)} Rotis"
             sub_items = [i.name for i in items[2:]]
-            subtitle = f"{meal_type}" + (f" • {sub_items[0]}" if sub_items else "")
+            subtitle = f"{sub_items[0]}" if sub_items else ""
         else:
             title = items[0].name
-            subtitle = meal_type
+            subtitle = ""
 
         timestamp_str = datetime.now().strftime("%I:%M %p").lstrip("0")
         meal_id = f"meal_{int(datetime.now().timestamp()*1000)}"
+
+        # Select representative image thumbnail
+        image_url = None
+        f_lower = title.lower()
+        if "avocado" in f_lower or "toast" in f_lower:
+            image_url = "/static/assets/avocado_toast.jpg"
+        elif "quinoa" in f_lower or "bowl" in f_lower or "curry" in f_lower or "chicken" in f_lower:
+            image_url = "/static/assets/quinoa_bowl.jpg"
+        elif "yogurt" in f_lower or "parfait" in f_lower or "berry" in f_lower or "oat" in f_lower:
+            image_url = "/static/assets/greek_yogurt.jpg"
 
         meal_log = MealLog(
             id=meal_id,
@@ -643,6 +769,7 @@ class AIInterpreter:
             carbs=total_c,
             fats=total_f,
             subtitle=subtitle,
+            image_url=image_url,
             entry_number=1084
         )
 
@@ -650,7 +777,63 @@ class AIInterpreter:
             "intent": INTENT_FOOD_LOG,
             "type": "new_meal",
             "meal": meal_log,
-            "reply_text": f"Logged that for you ({parser_name})! Here is the nutritional breakdown:"
+            "reply_text": f"Logged for **{meal_type}**! Here is the nutritional breakdown:"
+        }
+
+    def _handle_food_log(self, text: str, context: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+        """
+        Parses food items.
+        If user explicitly specified a category (e.g. 'breakfast', 'lunch', 'snacks', 'cheat meal', 'dinner'),
+        creates and logs it directly.
+        Otherwise, stores pending food for this user and prompts: 'Which meal to log in for?'
+        """
+        user_id = (context or {}).get("user_id") or "default"
+
+        # 1. Attempt rule-based parsing first
+        rule_items, is_confident = self._parse_with_rules(text)
+        items: List[FoodItem] = []
+
+        if is_confident and rule_items:
+            items = rule_items
+            logger.info("🔍 [PARSER: Rule-Based] Parsed '%s' -> %s", text, [f"{i.quantity}x {i.name}" for i in items])
+        else:
+            logger.info("⚠️ [PARSER: Rule-Based] Low confidence for '%s'. Calling Groq LLM fallback...", text)
+            groq_res = self._parse_with_groq(text)
+            if groq_res and groq_res.get("items"):
+                items = groq_res["items"]
+                logger.info("🤖 [PARSER: Groq LLM] Parsed '%s' -> %s", text, [f"{i.quantity}x {i.name}" for i in items])
+            elif rule_items:
+                items = rule_items
+                logger.warning("⚠️ [PARSER: Best Effort] Fallback to rule-based for '%s'", text)
+            else:
+                logger.info("ℹ️ [INTENT] No food items identified for '%s' -> not_food_related", text)
+                return self._handle_not_food_related(text, context)
+
+        if not items:
+            return self._handle_not_food_related(text, context)
+
+        # 2. If user already included the category in their text, log immediately
+        explicit_cat = extract_explicit_meal_type(text)
+        if explicit_cat:
+            return self._create_meal_from_items(items, explicit_cat, text, context)
+
+        # 3. Ask user which meal to log in for (Breakfast, Lunch, Snacks, Cheat Meal, Dinner)
+        self.pending_food_logs[user_id] = {
+            "items": items,
+            "text": text,
+            "timestamp": datetime.now()
+        }
+
+        food_summary = ", ".join(f"{int(i.quantity) if i.quantity.is_integer() else i.quantity}x {i.name}" for i in items)
+        return {
+            "intent": INTENT_FOOD_LOG,
+            "type": "ask_meal_type",
+            "reply_text": f"Got that ({food_summary})! Which meal would you like to log this for?",
+            "meal": None,
+            "meal_prompt": True,
+            "options": VALID_MEAL_TYPES,
+            "pending_food": text,
+            "suggestions": ["🌅 Breakfast", "☀️ Lunch", "🥪 Snacks", "🍕 Cheat Meal", "🌙 Dinner"]
         }
 
     def _parse_single_item(self, text: str) -> Optional[FoodItem]:

@@ -135,5 +135,36 @@ const api = {
       headers: this._getHeaders(false)
     });
     return await this._handleResponse(res, "Failed to reset data");
+  },
+
+  async updateVitals(vitals) {
+    const res = await fetch(`${API_BASE}/api/user/vitals`, {
+      method: "POST",
+      headers: this._getHeaders(true),
+      body: JSON.stringify(vitals)
+    });
+    return await this._handleResponse(res, "Failed to update height and weight");
+  },
+
+  async getDayStatus() {
+    const res = await fetch(`${API_BASE}/api/user/day-status`, {
+      headers: this._getHeaders(false)
+    });
+    return await this._handleResponse(res, "Failed to check day status");
+  },
+
+  async startNewDay() {
+    const res = await fetch(`${API_BASE}/api/user/start-new-day`, {
+      method: "POST",
+      headers: this._getHeaders(false)
+    });
+    return await this._handleResponse(res, "Failed to start new day");
+  },
+
+  async getUserHistory() {
+    const res = await fetch(`${API_BASE}/api/user/history`, {
+      headers: this._getHeaders(false)
+    });
+    return await this._handleResponse(res, "Failed to fetch nutrition history");
   }
 };

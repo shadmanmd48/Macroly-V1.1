@@ -1,4 +1,4 @@
-from typing import List, Optional, Dict, Any
+from typing import List, Optional, Dict, Any, Union
 from pydantic import BaseModel, Field
 
 class FoodItem(BaseModel):
@@ -14,8 +14,9 @@ class MealLog(BaseModel):
     id: str
     user_id: Optional[str] = None
     title: str
-    meal_type: str  # breakfast, lunch, dinner, snack
+    meal_type: str  # Breakfast, Lunch, Snacks, Cheat Meal, Dinner
     timestamp: str
+    date_str: Optional[str] = None
     items: List[FoodItem] = []
     total_calories: int = 0
     protein: float = 0.0
@@ -40,6 +41,13 @@ class Vitals(BaseModel):
     hydration_liters: float = 2.1
     hydration_target: float = 3.0
     weight_kg: float = 64.2
+    height_cm: float = 172.0
+    target_weight_kg: float = 62.0
+
+class UpdateVitalsRequest(BaseModel):
+    weight_kg: Optional[float] = None
+    height_cm: Optional[float] = None
+    target_weight_kg: Optional[float] = None
 
 class ChatMessage(BaseModel):
     id: str
@@ -51,6 +59,9 @@ class ChatMessage(BaseModel):
     update_note: Optional[str] = None
     delta_kcal: Optional[int] = None
     suggestions: List[str] = []
+    deleted_meal_id: Optional[str] = None
+    meal_prompt: Optional[Union[Dict[str, Any], bool]] = None
+    options: List[str] = []
 
 class DashboardSummary(BaseModel):
     user_name: str = "User"
@@ -72,6 +83,7 @@ class DashboardSummary(BaseModel):
 class ChatRequest(BaseModel):
     message: str
     session_id: Optional[str] = "default"
+    selected_meal_type: Optional[str] = None
 
 class ManualOverrideRequest(BaseModel):
     meal_id: str
@@ -104,4 +116,28 @@ class UpdateGoalsRequest(BaseModel):
 
 class UpdateAvatarRequest(BaseModel):
     avatar_url: str
+
+class DailyHistoryItem(BaseModel):
+    id: str
+    user_id: str
+    date_str: str
+    date_label: str
+    calories: int = 0
+    protein: float = 0.0
+    carbs: float = 0.0
+    fats: float = 0.0
+    calorie_target: int = 2000
+    protein_target: float = 130.0
+    carb_target: float = 220.0
+    fat_target: float = 65.0
+    meals_count: int = 0
+    meals: List[Dict[str, Any]] = []
+    created_at: Optional[str] = None
+
+class DayTransitionStatus(BaseModel):
+    show_transition: bool = False
+    today_date_str: str = ""
+    previous_day: Optional[Dict[str, Any]] = None
+    yesterday_summary: Optional[Dict[str, Any]] = None
+
 

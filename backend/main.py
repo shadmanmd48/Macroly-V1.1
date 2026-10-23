@@ -13,7 +13,8 @@ from fastapi.responses import FileResponse
 from datetime import datetime
 from backend.models import (
     ChatRequest, ChatMessage, DashboardSummary, ManualOverrideRequest,
-    MealLog, FoodItem, UserProfile, UpdateGoalsRequest, UpdateAvatarRequest
+    MealLog, FoodItem, UserProfile, UpdateGoalsRequest, UpdateAvatarRequest,
+    UpdateVitalsRequest, DailyHistoryItem, DayTransitionStatus
 )
 from backend.database import data_store
 from backend.auth import get_current_user, SUPABASE_URL, SUPABASE_ANON_KEY
@@ -89,6 +90,21 @@ def update_avatar(req: UpdateAvatarRequest, user: UserProfile = Depends(get_curr
         "user": updated
     }
 
+@app.post("/api/user/vitals")
+def update_vitals_endpoint(req: UpdateVitalsRequest, user: UserProfile = Depends(get_current_user)):
+    """Update authenticated user's height, weight, and target weight."""
+    updated = data_store.update_vitals(
+        user_id=user.id,
+        weight_kg=req.weight_kg,
+        height_cm=req.height_cm,
+        target_weight_kg=req.target_weight_kg
+    )
+    return {
+        "status": "success",
+        "vitals": updated,
+        "dashboard": data_store.get_dashboard(user.id)
+    }
+
 @app.post("/api/user/goals")
 def update_goals(req: UpdateGoalsRequest, user: UserProfile = Depends(get_current_user)):
     """Update user daily macro/calorie goals and mark onboarding as complete."""
@@ -114,6 +130,25 @@ def get_dashboard(user: UserProfile = Depends(get_current_user)):
     """Fetch user-scoped dashboard summary and rings."""
     return data_store.get_dashboard(user.id)
 
+@app.get("/api/user/day-status", response_model=DayTransitionStatus)
+def get_day_status(user: UserProfile = Depends(get_current_user)):
+    """Check if the user is logging in on a new day in IST to show the previous day summary pop-up."""
+    return data_store.check_day_transition(user.id)
+
+@app.post("/api/user/start-new-day")
+def start_new_day_endpoint(user: UserProfile = Depends(get_current_user)):
+    """Archives previous day intake, clears active day values, and starts a fresh day."""
+    fresh_dashboard = data_store.start_new_day(user.id)
+    return {
+        "status": "success",
+        "dashboard": fresh_dashboard
+    }
+
+@app.get("/api/user/history")
+def get_history_endpoint(user: UserProfile = Depends(get_current_user)):
+    """Fetches daily historical intake records (calories, protein, carbs, fats) for the user."""
+    return data_store.get_user_history(user.id)
+
 @app.post("/api/chat", response_model=ChatMessage)
 def chat_endpoint(req: ChatRequest, user: UserProfile = Depends(get_current_user)):
     """Process nutrition chat message strictly scoped to the authenticated user."""
@@ -134,9 +169,11 @@ def chat_endpoint(req: ChatRequest, user: UserProfile = Depends(get_current_user
     )
     data_store.add_chat_message(user.id, user_msg)
 
-    # Process through AI Interpreter with user's specific targets and profile
+    # Process through AI Interpreter with user's specific targets, profile, and pending context
     user_meals = data_store.get_all_meals(user.id)
     context = {
+        "user_id": user.id,
+        "selected_meal_type": req.selected_meal_type,
         "calorie_target": user.calorie_goal,
         "protein_target": user.protein_goal,
         "carbs_target": user.carb_goal,
@@ -151,12 +188,20 @@ def chat_endpoint(req: ChatRequest, user: UserProfile = Depends(get_current_user
     is_update = False
     update_note = None
     delta_kcal = None
+    deleted_meal_id = None
+    meal_prompt = None
 
     if res_type in ["new_meal", "food_log"]:
         if result.get("meal"):
             meal_data = result["meal"]
             meal_data.user_id = user.id
             data_store.add_meal(meal_data, user_id=user.id)
+    elif res_type == "meal_deleted":
+        deleted_meal_id = result.get("deleted_meal_id")
+        if deleted_meal_id:
+            data_store.delete_meal(deleted_meal_id, user_id=user.id)
+            is_update = True
+            update_note = f"Deleted meal: {result.get('deleted_meal_title', '')}"
     elif res_type in ["update", "correction", "deletion"]:
         if result.get("meal"):
             is_update = True
@@ -165,10 +210,16 @@ def chat_endpoint(req: ChatRequest, user: UserProfile = Depends(get_current_user
             update_note = result.get("note")
             delta_kcal = result.get("delta_kcal")
             data_store.update_meal(meal_data.id, meal_data.dict(), user_id=user.id)
+    elif res_type == "ask_meal_type":
+        meal_data = None
+        meal_prompt = result.get("meal_prompt")
     elif res_type in ["workout", "workout_log"]:
         data_store.log_workout(user.id, result["duration_mins"], result["calories_burned"])
     elif res_type == "not_food_related":
         meal_data = None
+
+    suggestions = result.get("suggestions", ["☕ Morning Coffee", "🍎 Snack", "🔲 Scan barcode"])
+    options = result.get("options", [])
 
     ai_msg = ChatMessage(
         id=ai_msg_id,
@@ -179,7 +230,10 @@ def chat_endpoint(req: ChatRequest, user: UserProfile = Depends(get_current_user
         is_update=is_update,
         update_note=update_note,
         delta_kcal=delta_kcal,
-        suggestions=["☕ Morning Coffee", "🍎 Snack", "🔲 Scan barcode"]
+        deleted_meal_id=deleted_meal_id,
+        meal_prompt=meal_prompt,
+        suggestions=suggestions,
+        options=options
     )
     data_store.add_chat_message(user.id, ai_msg)
 
