@@ -73,6 +73,13 @@ htmlcov/
 # Frontend / Node (if applicable)
 node_modules/
 
+# Android / Keystores & Build properties
+*.jks
+*.keystore
+keystore.properties
+local.properties
+.gradle/
+
 # Operating System Files
 .DS_Store
 Thumbs.db

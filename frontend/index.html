@@ -7,7 +7,7 @@
   <title>Macroly - AI Nutrition & Macro Tracker</title>
   <meta name="description"
     content="Conversational AI-powered calorie and macro tracking application. Chat to log meals and track nutrition in real time.">
-  <link rel="stylesheet" href="/static/css/styles.css?v=3.3">
+  <link rel="stylesheet" href="css/styles.css?v=3.3">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 
@@ -98,7 +98,7 @@
         </div>
       </div>
       <div class="header-user-avatar" id="avatarBtn" title="Profile & Settings">
-        <img src="/static/assets/avatar.jpg" alt="Profile" id="headerAvatarImg">
+        <img src="assets/avatar.jpg" alt="Profile" id="headerAvatarImg">
       </div>
     </header>
 
@@ -456,7 +456,7 @@
         <div class="clay-profile-card">
           <div class="clay-avatar-container">
             <div class="clay-avatar-ring" id="profileAvatarRing" title="Click to upload profile photo">
-              <img src="/static/assets/avatar.jpg" alt="User Profile" class="clay-avatar-image" id="profileAvatarImg">
+              <img src="assets/avatar.jpg" alt="User Profile" class="clay-avatar-image" id="profileAvatarImg">
             </div>
             <button class="clay-avatar-edit-badge" id="editAvatarBtn" title="Upload new photo">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
@@ -1193,10 +1193,38 @@
       </div>
     </div>
 
+    <!-- ================= 5. CLOUD SERVER WAKE-UP OVERLAY ================= -->
+    <div class="server-wakeup-overlay hidden" id="serverWakeupOverlay" role="dialog" aria-modal="true" aria-labelledby="wakeupTitle">
+      <div class="server-wakeup-card">
+        <div class="wakeup-badge-pulsing">
+          <div class="wakeup-spinner-ring"></div>
+          <div class="wakeup-icon-center">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"></path>
+            </svg>
+          </div>
+        </div>
+        <h3 class="wakeup-title" id="wakeupTitle">Waking up the cloud server...</h3>
+        <p class="wakeup-desc" id="wakeupDesc">
+          Macroly is connecting to your Render cloud service. Because the free tier sleeps when idle, starting the instance takes about 30–50 seconds.
+        </p>
+        <div class="wakeup-timer-badge">
+          <span class="wakeup-pulse-dot"></span>
+          <span id="wakeupTimerText">Connecting... (0s)</span>
+        </div>
+        <div class="wakeup-progress-track">
+          <div class="wakeup-progress-bar" id="wakeupProgressBar"></div>
+        </div>
+        <div class="wakeup-status-sub" id="wakeupStatusSub">
+          Attempting automatic connection (attempt 1)...
+        </div>
+      </div>
+    </div>
+
   </div>
 
-  <script src="/static/js/api.js?v=3.5"></script>
-  <script src="/static/js/app.js?v=3.6"></script>
+  <script src="js/api.js?v=3.5"></script>
+  <script src="js/app.js?v=3.6"></script>
 </body>
 
 </html>

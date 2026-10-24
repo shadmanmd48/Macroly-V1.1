@@ -1,16 +1,32 @@
 // Macroly REST API Client with Supabase Bearer Authentication
+const RENDER_BACKEND_URL = "https://macroly-v1-1.onrender.com";
+
+const isCapacitor = typeof window !== "undefined" && (
+  (window.Capacitor && typeof window.Capacitor.isNativePlatform === "function" && window.Capacitor.isNativePlatform()) ||
+  window.location.protocol === "capacitor:" ||
+  (window.location.hostname === "localhost" && !window.location.port)
+);
+
 const isLocalMachine = typeof window !== "undefined" && 
-  (window.location.hostname === "localhost" || 
-   window.location.hostname === "127.0.0.1" || 
+  (window.location.hostname === "127.0.0.1" || 
+   (window.location.hostname === "localhost" && window.location.port && window.location.port !== "8000") ||
    window.location.protocol === "file:");
 
-const API_BASE = (isLocalMachine && window.location.port && window.location.port !== "8000")
-  ? "http://127.0.0.1:8000"
-  : "";
+const API_BASE = isCapacitor
+  ? RENDER_BACKEND_URL
+  : (isLocalMachine ? "http://127.0.0.1:8000" : "");
 
 const api = {
   authToken: localStorage.getItem("macroly_auth_token") || "",
   onUnauthorizedCallback: null,
+
+  getBaseUrl() {
+    return API_BASE;
+  },
+
+  isNativeApp() {
+    return isCapacitor;
+  },
 
   setAuthToken(token) {
     this.authToken = token || "";
@@ -27,6 +43,52 @@ const api = {
 
   onUnauthorized(cb) {
     this.onUnauthorizedCallback = cb;
+  },
+
+  async pingHealth(timeoutMs = 10000) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      const res = await fetch(`${API_BASE}/api/health`, {
+        signal: controller.signal,
+        headers: { "Cache-Control": "no-cache" }
+      });
+      clearTimeout(timer);
+      return res.ok;
+    } catch (e) {
+      clearTimeout(timer);
+      return false;
+    }
+  },
+
+  async wakeUpServer({ onSlowNotice, onProgress, maxSeconds = 90 } = {}) {
+    const startTime = Date.now();
+    let attempt = 0;
+
+    const slowTimer = setTimeout(() => {
+      if (typeof onSlowNotice === "function") {
+        onSlowNotice();
+      }
+    }, 2200);
+
+    while ((Date.now() - startTime) < maxSeconds * 1000) {
+      attempt++;
+      const elapsed = Math.floor((Date.now() - startTime) / 1000);
+      if (typeof onProgress === "function") {
+        onProgress({ attempt, elapsed });
+      }
+
+      const isHealthy = await this.pingHealth(9000);
+      if (isHealthy) {
+        clearTimeout(slowTimer);
+        return true;
+      }
+
+      await new Promise(r => setTimeout(r, 2500));
+    }
+
+    clearTimeout(slowTimer);
+    return false;
   },
 
   _getHeaders(includeJson = true) {
@@ -60,7 +122,17 @@ const api = {
   },
 
   async getConfig() {
-    const res = await fetch(`${API_BASE}/api/config`);
+    let res;
+    try {
+      res = await fetch(`${API_BASE}/api/config`);
+    } catch (err) {
+      console.warn("Direct /api/config failed, checking server wake-up status...", err);
+      const isAwake = await this.wakeUpServer();
+      if (!isAwake) {
+        throw new Error("Cloud server could not be reached. Please check your internet connection.");
+      }
+      res = await fetch(`${API_BASE}/api/config`);
+    }
     return await this._handleResponse(res, "Failed to fetch Supabase config");
   },
 

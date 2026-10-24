@@ -484,17 +484,17 @@ document.addEventListener("DOMContentLoaded", () => {
       const card = document.createElement("div");
       card.className = "meal-item-card";
 
-      const defaultThumb = meal.image_url || "/static/assets/quinoa_bowl.jpg";
+      const defaultThumb = meal.image_url || "assets/quinoa_bowl.jpg";
       const thumbSrc = meal.meal_type.toLowerCase().includes("breakfast") 
-        ? "/static/assets/avocado_toast.jpg"
+        ? "assets/avocado_toast.jpg"
         : meal.meal_type.toLowerCase().includes("snack")
-        ? "/static/assets/greek_yogurt.jpg"
-        : "/static/assets/quinoa_bowl.jpg";
+        ? "assets/greek_yogurt.jpg"
+        : "assets/quinoa_bowl.jpg";
 
       card.innerHTML = `
         <div class="meal-card-top">
           <div class="meal-card-thumb">
-            <img src="${thumbSrc}" alt="${meal.title}" onerror="this.src='/static/assets/quinoa_bowl.jpg'">
+            <img src="${thumbSrc}" alt="${meal.title}" onerror="this.src='assets/quinoa_bowl.jpg'">
           </div>
           <div class="meal-card-details">
             <div class="meal-time-tag">${meal.meal_type}${meal.subtitle ? ` • ${meal.subtitle.replace(new RegExp('^' + meal.meal_type + '\\s*(?:•\\s*)?', 'i'), '').trim()}` : ""}</div>
@@ -1731,12 +1731,151 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  // Server Wake-up UI elements
+  const serverWakeupOverlay = document.getElementById("serverWakeupOverlay");
+  const wakeupTimerText = document.getElementById("wakeupTimerText");
+  const wakeupProgressBar = document.getElementById("wakeupProgressBar");
+  const wakeupStatusSub = document.getElementById("wakeupStatusSub");
+  const wakeupTitle = document.getElementById("wakeupTitle");
+
+  function showServerWakeup() {
+    if (!serverWakeupOverlay) return;
+    serverWakeupOverlay.classList.remove("hidden");
+  }
+
+  function updateServerWakeupStatus(attempt, elapsed) {
+    if (wakeupTimerText) {
+      wakeupTimerText.textContent = `Connecting... (${elapsed}s)`;
+    }
+    if (wakeupStatusSub) {
+      wakeupStatusSub.textContent = `Attempting connection (attempt ${attempt})...`;
+    }
+    if (wakeupProgressBar) {
+      const pct = Math.min(92, 10 + Math.floor((elapsed / 50) * 82));
+      wakeupProgressBar.style.width = `${pct}%`;
+    }
+  }
+
+  function hideServerWakeup(success = true) {
+    if (!serverWakeupOverlay) return;
+    if (success && !serverWakeupOverlay.classList.contains("hidden")) {
+      if (wakeupTitle) wakeupTitle.textContent = "Server Connected!";
+      if (wakeupStatusSub) wakeupStatusSub.textContent = "Loading Macroly...";
+      if (wakeupProgressBar) wakeupProgressBar.style.width = "100%";
+      setTimeout(() => {
+        serverWakeupOverlay.classList.add("hidden");
+      }, 600);
+    } else {
+      serverWakeupOverlay.classList.add("hidden");
+    }
+  }
+
+  function initCapacitorAuthDeepLinking() {
+    if (typeof window !== "undefined" && window.Capacitor?.Plugins?.App) {
+      window.Capacitor.Plugins.App.addListener("appUrlOpen", async (event) => {
+        console.log("Deep link event received:", event?.url);
+        if (!event || !event.url) return;
+
+        // Close system browser if open
+        if (window.Capacitor?.Plugins?.Browser) {
+          try {
+            await window.Capacitor.Plugins.Browser.close();
+          } catch (e) {
+            console.warn("Browser close error:", e);
+          }
+        }
+
+        if (event.url.includes("com.macroly.app://auth-callback") || event.url.includes("auth-callback")) {
+          await handleAuthDeepLink(event.url);
+        }
+      });
+    }
+  }
+
+  async function handleAuthDeepLink(urlString) {
+    try {
+      showAuthOverlay();
+      showAuthError("Finalizing Google Sign-In...");
+
+      // 1. Hash Fragment flow: com.macroly.app://auth-callback#access_token=...&refresh_token=...
+      if (urlString.includes("#")) {
+        const hash = urlString.substring(urlString.indexOf("#") + 1);
+        const params = new URLSearchParams(hash);
+        const accessToken = params.get("access_token");
+        const refreshToken = params.get("refresh_token");
+
+        if (accessToken) {
+          if (supabaseClient && refreshToken) {
+            try {
+              await supabaseClient.auth.setSession({
+                access_token: accessToken,
+                refresh_token: refreshToken
+              });
+            } catch (err) {
+              console.warn("setSession error:", err);
+            }
+          }
+          await handleAuthSuccess(accessToken);
+          clearAuthError();
+          return;
+        }
+      }
+
+      // 2. PKCE Query parameter flow: com.macroly.app://auth-callback?code=...
+      if (urlString.includes("code=")) {
+        const qIndex = urlString.indexOf("?");
+        if (qIndex !== -1) {
+          const query = urlString.substring(qIndex + 1).split("#")[0];
+          const params = new URLSearchParams(query);
+          const code = params.get("code");
+          if (code && supabaseClient?.auth?.exchangeCodeForSession) {
+            const { data, error } = await supabaseClient.auth.exchangeCodeForSession(code);
+            if (error) throw error;
+            if (data?.session?.access_token) {
+              await handleAuthSuccess(data.session.access_token);
+              clearAuthError();
+              return;
+            }
+          }
+        }
+      }
+
+      // 3. Error parameter check
+      if (urlString.includes("error_description=")) {
+        const params = new URLSearchParams(urlString.split("?")[1] || urlString.split("#")[1] || "");
+        const desc = params.get("error_description");
+        if (desc) {
+          showAuthError(decodeURIComponent(desc));
+          return;
+        }
+      }
+    } catch (err) {
+      console.error("Deep link auth error:", err);
+      showAuthError("Google Sign-In failed: " + (err.message || "Could not complete sign in"));
+    }
+  }
+
   async function initAuth() {
     api.onUnauthorized(() => {
       showAuthOverlay();
     });
 
+    initCapacitorAuthDeepLinking();
+
     try {
+      // Monitor cold start / free tier spin-up
+      const slowTimer = setTimeout(() => {
+        showServerWakeup();
+      }, 2000);
+
+      const isAwake = await api.wakeUpServer({
+        onSlowNotice: () => showServerWakeup(),
+        onProgress: ({ attempt, elapsed }) => updateServerWakeupStatus(attempt, elapsed),
+        maxSeconds: 90
+      });
+      clearTimeout(slowTimer);
+      hideServerWakeup(isAwake);
+
       const config = await api.getConfig();
       if (window.supabase && config.supabase_url && config.supabase_anon_key) {
         supabaseClient = window.supabase.createClient(config.supabase_url, config.supabase_anon_key);
@@ -1759,6 +1898,7 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     } catch (e) {
       console.warn("Supabase init error:", e);
+      hideServerWakeup(false);
     }
 
     // Check existing stored token (e.g. demo account)
@@ -1841,21 +1981,54 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // Google OAuth Sign-In
+  // Google OAuth Sign-In (System Browser on Native Android, standard redirect on Web)
   if (googleSignInBtn) {
     googleSignInBtn.addEventListener("click", async () => {
       if (!supabaseClient) {
-        showAuthError("Supabase client is not available.");
-        return;
-      }
-      try {
-        const { error } = await supabaseClient.auth.signInWithOAuth({
-          provider: "google",
-          options: {
-            redirectTo: window.location.origin
+        showAuthError("Supabase client is not ready. Attempting connection...");
+        try {
+          const cfg = await api.getConfig();
+          if (window.supabase && cfg.supabase_url && cfg.supabase_anon_key) {
+            supabaseClient = window.supabase.createClient(cfg.supabase_url, cfg.supabase_anon_key);
           }
-        });
-        if (error) throw error;
+        } catch (e) {}
+        if (!supabaseClient) {
+          showAuthError("Cloud service could not be contacted. Please verify internet connection.");
+          return;
+        }
+      }
+
+      try {
+        const isNative = api.isNativeApp();
+
+        if (isNative) {
+          // Native Capacitor: Use system browser with deep-link return
+          const { data, error } = await supabaseClient.auth.signInWithOAuth({
+            provider: "google",
+            options: {
+              redirectTo: "com.macroly.app://auth-callback",
+              skipBrowserRedirect: true
+            }
+          });
+          if (error) throw error;
+
+          if (data && data.url) {
+            if (window.Capacitor?.Plugins?.Browser) {
+              await window.Capacitor.Plugins.Browser.open({ url: data.url });
+            } else {
+              window.open(data.url, "_system");
+            }
+          }
+        } else {
+          // Web browser: standard in-tab OAuth redirect
+          const { error } = await supabaseClient.auth.signInWithOAuth({
+            provider: "google",
+            options: {
+              redirectTo: window.location.origin
+            }
+          });
+          if (error) throw error;
+        }
       } catch (err) {
         showAuthError(err.message || "Google sign-in failed.");
       }
@@ -1964,8 +2137,16 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   if (apkInfoRow) {
+    if (api.isNativeApp()) {
+      const valEl = apkInfoRow.querySelector(".profile-row-val");
+      if (valEl) valEl.textContent = "v1.0 (Installed)";
+    }
     apkInfoRow.addEventListener("click", () => {
-      showApkNotice("APK update will be given soon! Stay tuned.");
+      if (api.isNativeApp()) {
+        showApkNotice("You are running Macroly Android App v1.0!");
+      } else {
+        showApkNotice("APK update will be given soon! Stay tuned.");
+      }
     });
   }
 
@@ -1983,10 +2164,12 @@ document.addEventListener("DOMContentLoaded", () => {
   // Expose globally for interactive calls
   window.showApkUpdateNotice = showApkNotice;
 
-  // Automatically trigger popup notice on load
-  setTimeout(() => {
-    showApkNotice("APK update will be given soon!");
-  }, 1200);
+  // Automatically trigger popup notice on web only
+  if (!api.isNativeApp()) {
+    setTimeout(() => {
+      showApkNotice("APK update will be given soon!");
+    }, 1200);
+  }
 
   // Initial Boot with Supabase Authentication
   initAuth();
