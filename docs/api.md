@@ -2,7 +2,7 @@
 
 All protected API endpoints require an `Authorization: Bearer <SUPABASE_JWT_TOKEN>` header.
 
-Base URL: `http://localhost:8000` (or your production deployment domain, e.g. `https://macroly-v11-production.up.railway.app`)
+Base URL: `http://localhost:8000` (or your production deployment domain, e.g. `https://macroly-v1-1.onrender.com`)
 
 ---
 

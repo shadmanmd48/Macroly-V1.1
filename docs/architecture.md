@@ -73,7 +73,7 @@ When a user submits natural language input (e.g., *"3 butter naan and chicken cu
 - **Name Sanitization:** Strips qualifiers and conversational noise from the logged title for a clean dashboard view.
 
 ### Layer 3: CalorieNinjas Live Nutrition API
-- **Dynamic IP Resilience:** Utilizes CalorieNinjas REST API authenticated via `X-Api-Key`, eliminating IP-whitelist restrictions (such as FatSecret's OAuth Error 21) on dynamic cloud platforms like Railway.
+- **Dynamic IP Resilience:** Utilizes CalorieNinjas REST API authenticated via `X-Api-Key`, avoiding OAuth IP-whitelisting bottlenecks on dynamic cloud hosting platforms (such as Render or Railway).
 - **Compound Ingredient Resolution:** Queries un-cached ingredients and sums multi-component responses.
 - **Proportional Scaling:** Scales results linearly by volume (`ml` vs standard 250ml glass) or weight (`g` vs 100g base).
 
@@ -83,7 +83,17 @@ When a user submits natural language input (e.g., *"3 butter naan and chicken cu
 
 ---
 
-## 3. Authentication & Multi-Tenancy
+## 3. Mobile Client Architecture (Capacitor)
+
+- **Native Wrapper**: Packaged via `@capacitor/core`, `@capacitor/cli`, and `@capacitor/android` for installable Android APK builds.
+- **Bundled Assets**: Web assets (`frontend/`) are bundled directly inside the APK for instantaneous app launch.
+- **Dynamic API Target**: Automatically connects to the hosted backend (e.g., Render) in production while supporting local development.
+- **Server Wake-Up Resilience**: Includes an integrated polling indicator (*"Waking up the server..."*) that handles Render's free-tier cold starts seamlessly without displaying empty or broken states.
+- **OAuth Deep Linking**: Listens for `appUrlOpen` deep link events (`macroly://`) to complete Google OAuth callbacks cleanly inside the native application.
+
+---
+
+## 4. Authentication & Multi-Tenancy
 
 - **Client Authentication**: Handled via Supabase JavaScript Client (`@supabase/supabase-js`), supporting both email/password credentials and Google OAuth.
 - **Token Verification**: The backend (`backend/auth.py`) extracts the `Authorization: Bearer <access_token>` header, verifies the JWT signature and expiration against the Supabase Project's public JWKS / user endpoint, and injects the authenticated `user_id` into all route handlers.
@@ -91,7 +101,7 @@ When a user submits natural language input (e.g., *"3 butter naan and chicken cu
 
 ---
 
-## 4. Database Resilience
+## 5. Database Resilience
 
 - **Primary**: Supabase hosted PostgreSQL database connected via `psycopg2-binary` connection pooling.
 - **Failover / Local Mode**: If the remote PostgreSQL connection fails (e.g. DNS failure, missing internet connection, or zero-config development), the backend automatically initializes and switches to a local SQLite database (`backend/macroly.db`), creating all required schemas dynamically without crashing the server.
