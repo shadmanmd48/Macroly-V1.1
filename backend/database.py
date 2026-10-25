@@ -341,6 +341,14 @@ class DataStore:
         logger.info("Database initialized successfully in SQLite (%s)", db_path)
 
     def _seed_elena(self, cursor, is_pg: bool):
+        enable_demo = (
+            os.getenv("ENABLE_DEMO_AUTH", "false").lower() == "true"
+            and os.getenv("ENVIRONMENT", "").lower() != "production"
+            and os.getenv("RENDER", "").lower() != "true"
+        )
+        if not enable_demo:
+            return
+
         placeholder = "%s" if is_pg else "?"
         today_ist = get_ist_today_str()
         # 1. Seed Elena user

@@ -272,6 +272,18 @@ class TestMacrolyFeatures(unittest.TestCase):
         self.assertEqual(egg["calories"], 150)
         self.assertEqual(egg["protein"], 12.6)
 
+    # =========================================================================
+    # 6. Security: Demo Token Backdoor Guard
+    # =========================================================================
+    def test_demo_token_disabled_by_default(self):
+        """Verify that demo token is rejected when ENABLE_DEMO_AUTH is disabled."""
+        from backend.auth import verify_supabase_token
+        from fastapi import HTTPException
+        with self.assertRaises(HTTPException) as ctx:
+            verify_supabase_token("elena-demo-token")
+        self.assertEqual(ctx.exception.status_code, 401)
+
 
 if __name__ == "__main__":
     unittest.main()
+

@@ -2035,27 +2035,6 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // Quick Demo Account Shortcut (Instant Access)
-  if (demoAccountBtn) {
-    demoAccountBtn.style.display = "flex";
-    demoAccountBtn.addEventListener("click", async () => {
-      await handleAuthSuccess("elena-demo-token");
-    });
-  }
-
-  // Secret admin unlock: 3 taps on auth modal logo reveals demo button
-  const authBrandLogoBadge = document.getElementById("authBrandLogoBadge");
-  if (authBrandLogoBadge && demoAccountBtn) {
-    let logoTaps = 0;
-    authBrandLogoBadge.addEventListener("click", () => {
-      logoTaps++;
-      if (logoTaps >= 3) {
-        demoAccountBtn.style.display = demoAccountBtn.style.display === "none" ? "flex" : "none";
-        logoTaps = 0;
-      }
-    });
-  }
-
   // Onboarding Goal Handlers
   if (onboardSaveBtn) {
     onboardSaveBtn.addEventListener("click", async () => {
