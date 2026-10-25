@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 from dotenv import load_dotenv
 
 # Ensure environment variables are loaded
-load_dotenv(override=True)
+load_dotenv(override=False)
 
 from fastapi import FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
@@ -13,13 +13,13 @@ from fastapi.responses import FileResponse
 from datetime import datetime
 from backend.models import (
     ChatRequest, ChatMessage, DashboardSummary, ManualOverrideRequest,
-    MealLog, FoodItem, UserProfile, UpdateGoalsRequest, UpdateAvatarRequest,
-    UpdateVitalsRequest, DailyHistoryItem, DayTransitionStatus
+    UserProfile, UpdateGoalsRequest, UpdateAvatarRequest,
+    UpdateVitalsRequest, DayTransitionStatus
 )
 from backend.database import data_store
 from backend.auth import get_current_user, SUPABASE_URL, SUPABASE_ANON_KEY
 from backend.ai_interpreter import ai_interpreter
-from backend.smart_cache import smart_cache, get_database_info, is_postgres
+from backend.smart_cache import get_database_info
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 logger = logging.getLogger("macroly.server")
@@ -214,7 +214,7 @@ def chat_endpoint(req: ChatRequest, user: UserProfile = Depends(get_current_user
             meal_data.user_id = user.id
             update_note = result.get("note")
             delta_kcal = result.get("delta_kcal")
-            data_store.update_meal(meal_data.id, meal_data.dict(), user_id=user.id)
+            data_store.update_meal(meal_data.id, meal_data.model_dump(), user_id=user.id)
     elif res_type == "ask_meal_type":
         meal_data = None
         meal_prompt = result.get("meal_prompt")
@@ -252,7 +252,7 @@ def get_chat_history(user: UserProfile = Depends(get_current_user)):
 @app.post("/api/meal/override")
 def override_meal(req: ManualOverrideRequest, user: UserProfile = Depends(get_current_user)):
     """Manually update meal portions verifying ownership."""
-    updated = data_store.update_meal(req.meal_id, req.dict(exclude_unset=True), user_id=user.id)
+    updated = data_store.update_meal(req.meal_id, req.model_dump(exclude_unset=True), user_id=user.id)
     if not updated:
         raise HTTPException(status_code=404, detail="Meal not found or unauthorized")
     return {"status": "success", "meal": updated, "dashboard": data_store.get_dashboard(user.id)}

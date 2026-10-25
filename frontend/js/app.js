@@ -1773,7 +1773,6 @@ document.addEventListener("DOMContentLoaded", () => {
   function initCapacitorAuthDeepLinking() {
     if (typeof window !== "undefined" && window.Capacitor?.Plugins?.App) {
       window.Capacitor.Plugins.App.addListener("appUrlOpen", async (event) => {
-        console.log("Deep link event received:", event?.url);
         if (!event || !event.url) return;
 
         // Close system browser if open
