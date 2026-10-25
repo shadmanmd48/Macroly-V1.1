@@ -1,5 +1,6 @@
 import os
 import logging
+from typing import Dict, Any, List
 from contextlib import asynccontextmanager
 from dotenv import load_dotenv
 
@@ -61,7 +62,7 @@ app.add_middleware(
 FRONTEND_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "frontend"))
 
 @app.get("/api/config")
-def get_public_config():
+def get_public_config() -> Dict[str, str]:
     """Provides public configuration needed for client-side Supabase Auth."""
     return {
         "supabase_url": SUPABASE_URL,
@@ -69,7 +70,7 @@ def get_public_config():
     }
 
 @app.get("/api/health")
-def health_check():
+def health_check() -> Dict[str, Any]:
     db_info = get_database_info()
     return {
         "status": "healthy",
@@ -78,12 +79,12 @@ def health_check():
     }
 
 @app.get("/api/user/profile", response_model=UserProfile)
-def get_profile(user: UserProfile = Depends(get_current_user)):
+def get_profile(user: UserProfile = Depends(get_current_user)) -> UserProfile:
     """Fetch current user's profile and goal settings."""
     return user
 
 @app.post("/api/user/avatar")
-def update_avatar(req: UpdateAvatarRequest, user: UserProfile = Depends(get_current_user)):
+def update_avatar(req: UpdateAvatarRequest, user: UserProfile = Depends(get_current_user)) -> Dict[str, Any]:
     """Update authenticated user's profile picture."""
     if not req.avatar_url or not req.avatar_url.strip():
         raise HTTPException(status_code=400, detail="Avatar URL cannot be empty")
@@ -96,7 +97,7 @@ def update_avatar(req: UpdateAvatarRequest, user: UserProfile = Depends(get_curr
     }
 
 @app.post("/api/user/vitals")
-def update_vitals_endpoint(req: UpdateVitalsRequest, user: UserProfile = Depends(get_current_user)):
+def update_vitals_endpoint(req: UpdateVitalsRequest, user: UserProfile = Depends(get_current_user)) -> Dict[str, Any]:
     """Update authenticated user's height, weight, and target weight."""
     updated = data_store.update_vitals(
         user_id=user.id,
@@ -111,7 +112,7 @@ def update_vitals_endpoint(req: UpdateVitalsRequest, user: UserProfile = Depends
     }
 
 @app.post("/api/user/goals")
-def update_goals(req: UpdateGoalsRequest, user: UserProfile = Depends(get_current_user)):
+def update_goals(req: UpdateGoalsRequest, user: UserProfile = Depends(get_current_user)) -> Dict[str, Any]:
     """Update user daily macro/calorie goals and mark onboarding as complete."""
     updated = data_store.update_user_goals(
         user_id=user.id,
@@ -131,17 +132,17 @@ def update_goals(req: UpdateGoalsRequest, user: UserProfile = Depends(get_curren
     }
 
 @app.get("/api/dashboard", response_model=DashboardSummary)
-def get_dashboard(user: UserProfile = Depends(get_current_user)):
+def get_dashboard(user: UserProfile = Depends(get_current_user)) -> DashboardSummary:
     """Fetch user-scoped dashboard summary and rings."""
     return data_store.get_dashboard(user.id)
 
 @app.get("/api/user/day-status", response_model=DayTransitionStatus)
-def get_day_status(user: UserProfile = Depends(get_current_user)):
+def get_day_status(user: UserProfile = Depends(get_current_user)) -> DayTransitionStatus:
     """Check if the user is logging in on a new day in IST to show the previous day summary pop-up."""
     return data_store.check_day_transition(user.id)
 
 @app.post("/api/user/start-new-day")
-def start_new_day_endpoint(user: UserProfile = Depends(get_current_user)):
+def start_new_day_endpoint(user: UserProfile = Depends(get_current_user)) -> Dict[str, Any]:
     """Archives previous day intake, clears active day values, and starts a fresh day."""
     fresh_dashboard = data_store.start_new_day(user.id)
     return {
@@ -150,7 +151,7 @@ def start_new_day_endpoint(user: UserProfile = Depends(get_current_user)):
     }
 
 @app.get("/api/user/history")
-def get_history_endpoint(user: UserProfile = Depends(get_current_user)):
+def get_history_endpoint(user: UserProfile = Depends(get_current_user)) -> List[Dict[str, Any]]:
     """Fetches daily historical intake records (calories, protein, carbs, fats) for the user."""
     return data_store.get_user_history(user.id)
 
@@ -244,13 +245,13 @@ def chat_endpoint(req: ChatRequest, user: UserProfile = Depends(get_current_user
 
     return ai_msg
 
-@app.get("/api/chat/history")
-def get_chat_history(user: UserProfile = Depends(get_current_user)):
+@app.get("/api/chat/history", response_model=List[ChatMessage])
+def get_chat_history(user: UserProfile = Depends(get_current_user)) -> List[ChatMessage]:
     """Fetch chat history for the authenticated user."""
     return data_store.get_chat_history(user.id)
 
 @app.post("/api/meal/override")
-def override_meal(req: ManualOverrideRequest, user: UserProfile = Depends(get_current_user)):
+def override_meal(req: ManualOverrideRequest, user: UserProfile = Depends(get_current_user)) -> Dict[str, Any]:
     """Manually update meal portions verifying ownership."""
     updated = data_store.update_meal(req.meal_id, req.model_dump(exclude_unset=True), user_id=user.id)
     if not updated:
@@ -258,7 +259,7 @@ def override_meal(req: ManualOverrideRequest, user: UserProfile = Depends(get_cu
     return {"status": "success", "meal": updated, "dashboard": data_store.get_dashboard(user.id)}
 
 @app.delete("/api/meal/{meal_id}")
-def delete_meal(meal_id: str, user: UserProfile = Depends(get_current_user)):
+def delete_meal(meal_id: str, user: UserProfile = Depends(get_current_user)) -> Dict[str, Any]:
     """Delete meal verifying user ownership."""
     success = data_store.delete_meal(meal_id, user_id=user.id)
     if not success:
@@ -266,7 +267,7 @@ def delete_meal(meal_id: str, user: UserProfile = Depends(get_current_user)):
     return {"status": "success", "dashboard": data_store.get_dashboard(user.id)}
 
 @app.post("/api/reset")
-def reset_store(user: UserProfile = Depends(get_current_user)):
+def reset_store(user: UserProfile = Depends(get_current_user)) -> Dict[str, Any]:
     """Reset data for the authenticated user only."""
     data_store.reset_to_default(user.id)
     return {"status": "success", "dashboard": data_store.get_dashboard(user.id)}
@@ -288,6 +289,8 @@ if os.path.exists(FRONTEND_DIR):
         app.mount("/assets", StaticFiles(directory=assets_dir), name="assets")
 
     @app.get("/")
-    def serve_index():
+    def serve_index() -> FileResponse:
+        """Serve the frontend single-page application index."""
         return FileResponse(os.path.join(FRONTEND_DIR, "index.html"))
+
 

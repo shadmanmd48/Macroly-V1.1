@@ -6,12 +6,12 @@ from typing import Optional, Dict, Any, List
 from dotenv import load_dotenv
 
 # Ensure environment variables are loaded
-load_dotenv(override=True)
+load_dotenv(override=False)
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 logger = logging.getLogger("macroly.database")
 
-DATABASE_URL = os.getenv("DATABASE_URL", "").strip()
+DATABASE_URL = "" if os.getenv("TESTING", "").lower() == "true" else os.getenv("DATABASE_URL", "").strip()
 DEFAULT_SQLITE_PATH = os.path.join(os.path.dirname(__file__), "macroly.db")
 SQLITE_DB_PATH = os.getenv("SQLITE_DB_PATH", DEFAULT_SQLITE_PATH).strip()
 
