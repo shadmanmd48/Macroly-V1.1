@@ -16,10 +16,10 @@ def get_ist_today_str() -> str:
     return get_ist_now().strftime("%Y-%m-%d")
 
 # Ensure environment variables are loaded
-load_dotenv(override=True)
+load_dotenv(override=False)
 
 logger = logging.getLogger("macroly.database")
-DATABASE_URL = os.getenv("DATABASE_URL", "").strip()
+DATABASE_URL = "" if os.getenv("TESTING", "").lower() == "true" else os.getenv("DATABASE_URL", "").strip()
 DEFAULT_SQLITE_PATH = os.path.join(os.path.dirname(__file__), "macroly.db")
 SQLITE_DB_PATH = os.getenv("SQLITE_DB_PATH", DEFAULT_SQLITE_PATH).strip()
 
