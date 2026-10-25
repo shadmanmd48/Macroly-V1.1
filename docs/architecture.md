@@ -2,8 +2,6 @@
 
 Macroly is designed as a modular, resilient nutrition and workout logging platform that merges fast client-side interactions with an intelligent, multi-tiered AI and nutritional lookup backend.
 
-For a comprehensive log of AI models, approximations, and parsing features, see [ai_architecture_and_feature_log.md](file:///c:/Users/user/OneDrive/Desktop/Macroly/docs/ai_architecture_and_feature_log.md).
-
 ---
 
 ## 1. System Overview
