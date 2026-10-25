@@ -8,8 +8,15 @@ from dotenv import load_dotenv
 from backend.smart_cache import smart_cache
 
 # Ensure environment variables are loaded
-load_dotenv()
+load_dotenv(override=False)
 logger = logging.getLogger("macroly.nutrition")
+
+# Network and fallback constants
+DEFAULT_HTTP_TIMEOUT_SECONDS = 8
+DEFAULT_UNLISTED_CALORIES = 180
+DEFAULT_UNLISTED_PROTEIN = 8.0
+DEFAULT_UNLISTED_CARBS = 22.0
+DEFAULT_UNLISTED_FATS = 6.0
 
 # Estimator heuristics for unknown foods based on food categories
 FOOD_CATEGORY_HEURISTICS = {
@@ -62,7 +69,7 @@ class NutritionService:
 
             api_url = "https://api.calorieninjas.com/v1/nutrition"
             headers = {"X-Api-Key": api_key}
-            resp = requests.get(api_url, headers=headers, params={"query": query}, timeout=8)
+            resp = requests.get(api_url, headers=headers, params={"query": query}, timeout=DEFAULT_HTTP_TIMEOUT_SECONDS)
             if resp.status_code != 200:
                 logger.warning("CalorieNinjas API query returned HTTP %s for '%s'", resp.status_code, query)
                 return None
@@ -71,7 +78,7 @@ class NutritionService:
             items = data.get("items", [])
             # Fallback to plain food_name query if compound query returned 0 items
             if not items and query != food_name:
-                resp_plain = requests.get(api_url, headers=headers, params={"query": food_name}, timeout=8)
+                resp_plain = requests.get(api_url, headers=headers, params={"query": food_name}, timeout=DEFAULT_HTTP_TIMEOUT_SECONDS)
                 if resp_plain.status_code == 200:
                     data = resp_plain.json()
                     items = data.get("items", [])
@@ -124,10 +131,10 @@ class NutritionService:
             }
 
         # Generic sensible baseline for unlisted food
-        cal = int(round(180 * quantity))
-        p = round(8.0 * quantity, 1)
-        c = round(22.0 * quantity, 1)
-        f = round(6.0 * quantity, 1)
+        cal = int(round(DEFAULT_UNLISTED_CALORIES * quantity))
+        p = round(DEFAULT_UNLISTED_PROTEIN * quantity, 1)
+        c = round(DEFAULT_UNLISTED_CARBS * quantity, 1)
+        f = round(DEFAULT_UNLISTED_FATS * quantity, 1)
         return {
             "name": food_name.title(),
             "quantity": quantity,

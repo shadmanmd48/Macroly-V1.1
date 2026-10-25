@@ -17,6 +17,13 @@ logger = logging.getLogger("macroly.auth")
 SUPABASE_URL = os.getenv("SUPABASE_URL", "").strip().rstrip("/")
 SUPABASE_ANON_KEY = os.getenv("SUPABASE_ANON_KEY", "").strip()
 
+# Demo authentication backdoor guard: Disabled by default, strictly forbidden in production
+ENABLE_DEMO_AUTH = (
+    os.getenv("ENABLE_DEMO_AUTH", "false").lower() == "true"
+    and os.getenv("ENVIRONMENT", "").lower() != "production"
+    and os.getenv("RENDER", "").lower() != "true"
+)
+
 # In-memory token validation cache: token -> (UserProfile, expiry_timestamp)
 _TOKEN_CACHE: Dict[str, Tuple[UserProfile, float]] = {}
 CACHE_TTL_SECONDS = 60
@@ -31,8 +38,14 @@ def verify_supabase_token(token: str) -> UserProfile:
         else:
             del _TOKEN_CACHE[token]
 
-    # Special seeded Elena demo token for backward compatibility and automated tests
+    # Special demo token: only allowed if explicitly enabled in non-production environments
     if token == "elena-demo-token":
+        if not ENABLE_DEMO_AUTH:
+            logger.warning("Rejected demo token attempt: ENABLE_DEMO_AUTH is disabled")
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Demo authentication token is disabled"
+            )
         elena_user = data_store.get_user(ELENA_USER_ID)
         if not elena_user:
             elena_user = data_store.get_or_create_user(ELENA_USER_ID, "elena@macroly.test", "Elena")

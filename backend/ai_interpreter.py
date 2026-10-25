@@ -9,7 +9,7 @@ from backend.models import FoodItem, MealLog, ChatMessage, WorkoutLog
 from backend.nutrition_service import nutrition_service
 
 # Ensure environment variables are loaded
-load_dotenv(override=True)
+load_dotenv(override=False)
 
 logger = logging.getLogger("macroly.ai_interpreter")
 
@@ -94,8 +94,6 @@ def is_category_selection(text: str) -> Optional[str]:
 class AIInterpreter:
     def __init__(self):
         self.groq_api_key = os.getenv("GROQ_API_KEY", "").strip()
-        self.gemini_api_key = os.getenv("GEMINI_API_KEY", "").strip()
-        self.openai_api_key = os.getenv("OPENAI_API_KEY", "").strip()
         self.last_meal: Optional[MealLog] = None
         self.conversation_context: Dict[str, Any] = {}
         # Multi-user isolated pending food logs waiting for category selection

@@ -79,6 +79,12 @@ node_modules/
 keystore.properties
 local.properties
 .gradle/
+android/.gradle/
+android/app/build/
+android/build/
+android/capacitor-cordova-android-plugins/build/
+*.apk
+*.aab
 
 # Operating System Files
 .DS_Store

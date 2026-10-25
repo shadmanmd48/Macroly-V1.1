@@ -16,10 +16,10 @@ def get_ist_today_str() -> str:
     return get_ist_now().strftime("%Y-%m-%d")
 
 # Ensure environment variables are loaded
-load_dotenv(override=True)
+load_dotenv(override=False)
 
 logger = logging.getLogger("macroly.database")
-DATABASE_URL = os.getenv("DATABASE_URL", "").strip()
+DATABASE_URL = "" if os.getenv("TESTING", "").lower() == "true" else os.getenv("DATABASE_URL", "").strip()
 DEFAULT_SQLITE_PATH = os.path.join(os.path.dirname(__file__), "macroly.db")
 SQLITE_DB_PATH = os.getenv("SQLITE_DB_PATH", DEFAULT_SQLITE_PATH).strip()
 
@@ -341,6 +341,14 @@ class DataStore:
         logger.info("Database initialized successfully in SQLite (%s)", db_path)
 
     def _seed_elena(self, cursor, is_pg: bool):
+        enable_demo = (
+            os.getenv("ENABLE_DEMO_AUTH", "false").lower() == "true"
+            and os.getenv("ENVIRONMENT", "").lower() != "production"
+            and os.getenv("RENDER", "").lower() != "true"
+        )
+        if not enable_demo:
+            return
+
         placeholder = "%s" if is_pg else "?"
         today_ist = get_ist_today_str()
         # 1. Seed Elena user

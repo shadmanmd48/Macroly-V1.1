@@ -1773,7 +1773,6 @@ document.addEventListener("DOMContentLoaded", () => {
   function initCapacitorAuthDeepLinking() {
     if (typeof window !== "undefined" && window.Capacitor?.Plugins?.App) {
       window.Capacitor.Plugins.App.addListener("appUrlOpen", async (event) => {
-        console.log("Deep link event received:", event?.url);
         if (!event || !event.url) return;
 
         // Close system browser if open
@@ -2031,27 +2030,6 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       } catch (err) {
         showAuthError(err.message || "Google sign-in failed.");
-      }
-    });
-  }
-
-  // Quick Demo Account Shortcut (Instant Access)
-  if (demoAccountBtn) {
-    demoAccountBtn.style.display = "flex";
-    demoAccountBtn.addEventListener("click", async () => {
-      await handleAuthSuccess("elena-demo-token");
-    });
-  }
-
-  // Secret admin unlock: 3 taps on auth modal logo reveals demo button
-  const authBrandLogoBadge = document.getElementById("authBrandLogoBadge");
-  if (authBrandLogoBadge && demoAccountBtn) {
-    let logoTaps = 0;
-    authBrandLogoBadge.addEventListener("click", () => {
-      logoTaps++;
-      if (logoTaps >= 3) {
-        demoAccountBtn.style.display = demoAccountBtn.style.display === "none" ? "flex" : "none";
-        logoTaps = 0;
       }
     });
   }
