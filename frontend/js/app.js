@@ -317,6 +317,8 @@ document.addEventListener("DOMContentLoaded", () => {
         console.error("Logout error:", e);
       }
       api.setAuthToken("");
+      resetUserStateUI();
+      dismissProfileLoadingOverlay();
       showAuthOverlay();
     });
   }
@@ -1663,6 +1665,216 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   // =========================================================================
+  // PROFILE LOADING ANIMATION CONTROLLER (Carbs -> Protein -> Running -> Gym)
+  // =========================================================================
+  const profileLoaderOverlay = document.getElementById("profileLoaderOverlay");
+  const profileLoaderCard = document.getElementById("profileLoaderCard");
+  const profileLoaderStatus = document.getElementById("profileLoaderStatus");
+  const profileLoaderTitle = document.getElementById("profileLoaderTitle");
+  const profileLoaderDesc = document.getElementById("profileLoaderDesc");
+  const profileLoaderProgressFill = document.getElementById("profileLoaderProgressFill");
+  const profileLoaderHint = document.getElementById("profileLoaderHint");
+
+  const stageGraphicCarbs = document.getElementById("stageGraphicCarbs");
+  const stageGraphicProtein = document.getElementById("stageGraphicProtein");
+  const stageGraphicRunning = document.getElementById("stageGraphicRunning");
+  const stageGraphicGym = document.getElementById("stageGraphicGym");
+  const stageGraphicSuccess = document.getElementById("stageGraphicSuccess");
+
+  const pillCarbs = document.getElementById("pillCarbs");
+  const pillProtein = document.getElementById("pillProtein");
+  const pillRunning = document.getElementById("pillRunning");
+  const pillGym = document.getElementById("pillGym");
+
+  const STAGE_CONFIGS = [
+    {
+      id: "carbs",
+      graphic: stageGraphicCarbs,
+      pill: pillCarbs,
+      themeClass: "theme-carbs",
+      title: "Balancing Energy & Carbs",
+      desc: "Optimizing clean fuel & daily glycogen targets...",
+      progress: 25,
+      hint: "Calibrating daily carbohydrate & fuel reserves..."
+    },
+    {
+      id: "protein",
+      graphic: stageGraphicProtein,
+      pill: pillProtein,
+      themeClass: "theme-protein",
+      title: "Calculating Protein Targets",
+      desc: "Calibrating amino acids, lean muscle & recovery...",
+      progress: 52,
+      hint: "Setting up protein synthesis & recovery stats..."
+    },
+    {
+      id: "running",
+      graphic: stageGraphicRunning,
+      pill: pillRunning,
+      themeClass: "theme-running",
+      title: "Syncing Running & Cardio",
+      desc: "Calibrating active burn, pace & aerobic endurance...",
+      progress: 78,
+      hint: "Syncing cardiovascular pace & cardio burn..."
+    },
+    {
+      id: "gym",
+      graphic: stageGraphicGym,
+      pill: pillGym,
+      themeClass: "theme-gym",
+      title: "Powering Strength & Gym",
+      desc: "Syncing workout volume, sets & strength output...",
+      progress: 92,
+      hint: "Finalizing workout routines & lifting targets..."
+    }
+  ];
+
+  let profileLoaderTimer = null;
+  let activeStageIndex = 0;
+  let isLoaderActive = false;
+
+  function setStageByIndex(idx) {
+    activeStageIndex = idx % STAGE_CONFIGS.length;
+    const cfg = STAGE_CONFIGS[activeStageIndex];
+
+    if (!profileLoaderOverlay) return;
+
+    profileLoaderOverlay.classList.remove("theme-carbs", "theme-protein", "theme-running", "theme-gym", "theme-success");
+    profileLoaderOverlay.classList.add(cfg.themeClass);
+
+    [stageGraphicCarbs, stageGraphicProtein, stageGraphicRunning, stageGraphicGym, stageGraphicSuccess].forEach(g => {
+      if (g) g.classList.remove("active");
+    });
+    if (cfg.graphic) cfg.graphic.classList.add("active");
+
+    [pillCarbs, pillProtein, pillRunning, pillGym].forEach(p => {
+      if (p) p.classList.remove("active");
+    });
+    if (cfg.pill) cfg.pill.classList.add("active");
+
+    if (profileLoaderTitle) profileLoaderTitle.textContent = cfg.title;
+    if (profileLoaderDesc) profileLoaderDesc.textContent = cfg.desc;
+    if (profileLoaderHint) profileLoaderHint.textContent = cfg.hint;
+    if (profileLoaderProgressFill) profileLoaderProgressFill.style.width = `${cfg.progress}%`;
+  }
+
+  function showProfileLoadingOverlay(options = {}) {
+    if (!profileLoaderOverlay) return;
+
+    isLoaderActive = true;
+    profileLoaderOverlay.classList.remove("hidden");
+
+    if (options.status && profileLoaderStatus) {
+      profileLoaderStatus.textContent = options.status;
+    } else if (profileLoaderStatus) {
+      profileLoaderStatus.textContent = "Syncing your account...";
+    }
+
+    setStageByIndex(0);
+
+    if (profileLoaderTimer) clearInterval(profileLoaderTimer);
+    profileLoaderTimer = setInterval(() => {
+      setStageByIndex(activeStageIndex + 1);
+    }, 1600);
+  }
+
+  function finishProfileLoadingOverlay(rawName = "Athlete") {
+    return new Promise((resolve) => {
+      if (!profileLoaderOverlay || !isLoaderActive) {
+        resolve();
+        return;
+      }
+
+      if (profileLoaderTimer) {
+        clearInterval(profileLoaderTimer);
+        profileLoaderTimer = null;
+      }
+
+      const firstName = (typeof rawName === "string" && rawName.trim().length > 0)
+        ? rawName.trim().split(" ")[0]
+        : "Athlete";
+
+      profileLoaderOverlay.classList.remove("theme-carbs", "theme-protein", "theme-running", "theme-gym");
+      profileLoaderOverlay.classList.add("theme-success");
+
+      [stageGraphicCarbs, stageGraphicProtein, stageGraphicRunning, stageGraphicGym].forEach(g => {
+        if (g) g.classList.remove("active");
+      });
+      if (stageGraphicSuccess) stageGraphicSuccess.classList.add("active");
+
+      [pillCarbs, pillProtein, pillRunning, pillGym].forEach(p => {
+        if (p) p.classList.remove("active");
+      });
+
+      if (profileLoaderStatus) profileLoaderStatus.textContent = "Profile Ready!";
+      if (profileLoaderTitle) profileLoaderTitle.textContent = `Welcome, ${firstName}! 👋`;
+      if (profileLoaderDesc) profileLoaderDesc.textContent = "Your customized macros and nutrition plan are ready.";
+      if (profileLoaderHint) profileLoaderHint.textContent = "Launching your dashboard...";
+      if (profileLoaderProgressFill) profileLoaderProgressFill.style.width = "100%";
+
+      setTimeout(() => {
+        dismissProfileLoadingOverlay();
+        resolve();
+      }, 650);
+    });
+  }
+
+  function dismissProfileLoadingOverlay() {
+    if (profileLoaderTimer) {
+      clearInterval(profileLoaderTimer);
+      profileLoaderTimer = null;
+    }
+    isLoaderActive = false;
+    if (profileLoaderOverlay) {
+      profileLoaderOverlay.classList.add("hidden");
+      profileLoaderOverlay.classList.remove("theme-carbs", "theme-protein", "theme-running", "theme-gym", "theme-success");
+    }
+  }
+
+  function resetUserStateUI() {
+    currentUserProfile = null;
+    latestDashboardData = null;
+
+    if (profileDisplayName) profileDisplayName.textContent = "User Profile";
+    if (profileEmail) profileEmail.textContent = "Loading account...";
+    if (userGreeting) userGreeting.textContent = "Welcome to Macroly 👋";
+
+    const defaultAvatar = "assets/avatar.jpg";
+    if (headerAvatarImg) headerAvatarImg.src = defaultAvatar;
+    if (profileAvatarImg) profileAvatarImg.src = defaultAvatar;
+
+    if (calsConsumedVal) calsConsumedVal.textContent = "0";
+    if (calsTargetVal) calsTargetVal.textContent = "/ 2,000 kcal";
+    if (calsLeftPill) calsLeftPill.textContent = "2,000 left";
+    if (calorieArc) calorieArc.style.strokeDashoffset = "603.18";
+
+    if (pVal) pVal.textContent = "0";
+    if (pPct) pPct.textContent = "0%";
+    if (cVal) cVal.textContent = "0";
+    if (cPct) cPct.textContent = "0%";
+    if (fVal) fVal.textContent = "0";
+    if (fPct) fPct.textContent = "0%";
+
+    if (proteinRing) proteinRing.style.strokeDashoffset = "100.5";
+    if (carbsRing) carbsRing.style.strokeDashoffset = "100.5";
+    if (fatsRing) fatsRing.style.strokeDashoffset = "100.5";
+
+    if (mealsListContainer) {
+      mealsListContainer.innerHTML = '<div class="history-empty-placeholder">Loading your meals...</div>';
+    }
+    if (mealsCountPill) mealsCountPill.textContent = "0 meals";
+
+    const profileWeight = document.getElementById("profileWeightVal");
+    const profileHeight = document.getElementById("profileHeightVal");
+    const profileGoalWeight = document.getElementById("profileGoalWeightVal");
+    const profileBmi = document.getElementById("profileBmiVal");
+    if (profileWeight) profileWeight.textContent = "--";
+    if (profileHeight) profileHeight.textContent = "--";
+    if (profileGoalWeight) profileGoalWeight.textContent = "Goal: --";
+    if (profileBmi) profileBmi.textContent = "BMI --";
+  }
+
+  // =========================================================================
   // SUPABASE AUTHENTICATION & ONBOARDING CONTROLLER
   // =========================================================================
 
@@ -1691,8 +1903,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
   async function handleAuthSuccess(token) {
     api.setAuthToken(token);
-    hideAuthOverlay();
     clearAuthError();
+
+    // Show the Carbs -> Protein -> Running -> Gym cycling animation immediately!
+    showProfileLoadingOverlay({
+      status: "Syncing your account..."
+    });
+    hideAuthOverlay();
 
     try {
       // Parallelize profile & dashboard requests for instant screen load
@@ -1725,9 +1942,14 @@ document.addEventListener("DOMContentLoaded", () => {
       initMockupChatSeed();
       switchScreen("dashboard");
       await checkDayTransition();
+
+      // Only dismiss after all profile data & dashboard data is completely rendered in DOM!
+      await finishProfileLoadingOverlay(profile.display_name);
     } catch (e) {
       console.error("Post-auth profile fetch failed:", e);
+      dismissProfileLoadingOverlay();
       showAuthOverlay();
+      showAuthError("Failed to load your profile. Please sign in again.");
     }
   }
 
@@ -1793,8 +2015,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   async function handleAuthDeepLink(urlString) {
     try {
-      showAuthOverlay();
-      showAuthError("Finalizing Google Sign-In...");
+      showProfileLoadingOverlay({ status: "Finalizing Google Sign-In..." });
+      clearAuthError();
 
       // 1. Hash Fragment flow: com.macroly.app://auth-callback#access_token=...&refresh_token=...
       if (urlString.includes("#")) {
@@ -1844,22 +2066,41 @@ document.addEventListener("DOMContentLoaded", () => {
         const params = new URLSearchParams(urlString.split("?")[1] || urlString.split("#")[1] || "");
         const desc = params.get("error_description");
         if (desc) {
+          dismissProfileLoadingOverlay();
+          showAuthOverlay();
           showAuthError(decodeURIComponent(desc));
           return;
         }
       }
     } catch (err) {
       console.error("Deep link auth error:", err);
+      dismissProfileLoadingOverlay();
+      showAuthOverlay();
       showAuthError("Google Sign-In failed: " + (err.message || "Could not complete sign in"));
     }
   }
 
   async function initAuth() {
     api.onUnauthorized(() => {
+      resetUserStateUI();
+      dismissProfileLoadingOverlay();
       showAuthOverlay();
     });
 
     initCapacitorAuthDeepLinking();
+
+    // Check if returning from Google OAuth or if an auth token is already stored
+    const isOAuthReturn = window.location.hash.includes("access_token") || 
+                          window.location.search.includes("code=") ||
+                          window.location.href.includes("auth-callback");
+    const hasStoredToken = !!api.getAuthToken();
+
+    if (isOAuthReturn || hasStoredToken) {
+      // Immediately show the cycling loader so user NEVER sees the old/demo profile during boot!
+      showProfileLoadingOverlay({
+        status: isOAuthReturn ? "Finalizing Google Sign-In..." : "Restoring your account..."
+      });
+    }
 
     try {
       // Monitor cold start / free tier spin-up
@@ -1891,6 +2132,7 @@ document.addEventListener("DOMContentLoaded", () => {
           if (session && session.access_token) {
             await handleAuthSuccess(session.access_token);
           } else if (!api.getAuthToken()) {
+            dismissProfileLoadingOverlay();
             showAuthOverlay();
           }
         });
@@ -1911,7 +2153,8 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }
 
-    // If no active session, present the auth screen
+    // If no active session, dismiss loading and present the auth screen
+    dismissProfileLoadingOverlay();
     showAuthOverlay();
   }
 
@@ -1953,6 +2196,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       try {
         if (authMode === "signin") {
+          showProfileLoadingOverlay({ status: "Signing in to your account..." });
           const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
           if (error) throw error;
           if (data && data.session) {
@@ -1972,6 +2216,7 @@ document.addEventListener("DOMContentLoaded", () => {
           }
         }
       } catch (err) {
+        dismissProfileLoadingOverlay();
         showAuthError(err.message || "Authentication failed.");
       } finally {
         authSubmitBtn.disabled = false;
@@ -1983,8 +2228,9 @@ document.addEventListener("DOMContentLoaded", () => {
   // Google OAuth Sign-In (System Browser on Native Android, standard redirect on Web)
   if (googleSignInBtn) {
     googleSignInBtn.addEventListener("click", async () => {
+      showProfileLoadingOverlay({ status: "Connecting with Google..." });
+
       if (!supabaseClient) {
-        showAuthError("Supabase client is not ready. Attempting connection...");
         try {
           const cfg = await api.getConfig();
           if (window.supabase && cfg.supabase_url && cfg.supabase_anon_key) {
@@ -1992,6 +2238,7 @@ document.addEventListener("DOMContentLoaded", () => {
           }
         } catch (e) {}
         if (!supabaseClient) {
+          dismissProfileLoadingOverlay();
           showAuthError("Cloud service could not be contacted. Please verify internet connection.");
           return;
         }
@@ -2029,6 +2276,7 @@ document.addEventListener("DOMContentLoaded", () => {
           if (error) throw error;
         }
       } catch (err) {
+        dismissProfileLoadingOverlay();
         showAuthError(err.message || "Google sign-in failed.");
       }
     });

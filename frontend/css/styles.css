@@ -3768,3 +3768,525 @@ body.dark-theme .selected-meal-name {
     transform: scale(1);
   }
 }
+
+/* ==========================================================================
+   PROFILE INITIALIZING / LOADING OVERLAY ANIMATIONS (Carbs, Protein, Running, Gym)
+   ========================================================================== */
+
+.profile-loader-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(8, 15, 11, 0.88);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  z-index: 2500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px 16px;
+  animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  --stage-accent: #f59e0b;
+  --stage-glow: rgba(245, 158, 11, 0.32);
+}
+
+.profile-loader-overlay.hidden {
+  display: none !important;
+}
+
+/* Dynamic Stage Theme Variables on Overlay */
+.profile-loader-overlay.theme-carbs {
+  --stage-accent: #f59e0b;
+  --stage-glow: rgba(245, 158, 11, 0.35);
+}
+
+.profile-loader-overlay.theme-protein {
+  --stage-accent: #38bdf8;
+  --stage-glow: rgba(56, 189, 248, 0.35);
+}
+
+.profile-loader-overlay.theme-running {
+  --stage-accent: #10b981;
+  --stage-glow: rgba(16, 185, 129, 0.35);
+}
+
+.profile-loader-overlay.theme-gym {
+  --stage-accent: #a855f7;
+  --stage-glow: rgba(168, 85, 247, 0.35);
+}
+
+.profile-loader-overlay.theme-success {
+  --stage-accent: #22c55e;
+  --stage-glow: rgba(34, 197, 94, 0.4);
+}
+
+.profile-loader-ambient-glow {
+  position: absolute;
+  width: 320px;
+  height: 320px;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--stage-glow) 0%, transparent 70%);
+  filter: blur(40px);
+  pointer-events: none;
+  transition: background 0.6s ease;
+  z-index: 0;
+}
+
+.profile-loader-card {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 380px;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 32px;
+  padding: 26px 20px 22px;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.3), 0 0 35px var(--stage-glow);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  transition: box-shadow 0.5s ease, border-color 0.5s ease;
+}
+
+[data-theme="dark"] .profile-loader-card,
+body.dark-theme .profile-loader-card {
+  background: rgba(18, 28, 22, 0.96);
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.65), 0 0 35px var(--stage-glow);
+}
+
+/* Status Pill */
+.profile-loader-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 13px;
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 9999px;
+  margin-bottom: 12px;
+  transition: background 0.3s ease;
+}
+
+[data-theme="dark"] .profile-loader-status-pill,
+body.dark-theme .profile-loader-status-pill {
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.profile-loader-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--stage-accent);
+  box-shadow: 0 0 8px var(--stage-accent);
+  animation: pulseDot 1.4s ease-in-out infinite;
+  transition: background 0.4s ease, box-shadow 0.4s ease;
+}
+
+.profile-loader-status-text {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--text-muted);
+  letter-spacing: 0.2px;
+}
+
+/* Stage Canvas Area */
+.profile-loader-stage {
+  position: relative;
+  width: 114px;
+  height: 114px;
+  margin: 4px auto 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.stage-orbital-ring {
+  position: absolute;
+  inset: -6px;
+  border-radius: 50%;
+  border: 2px dashed var(--stage-accent);
+  opacity: 0.45;
+  animation: orbitalRotate 14s linear infinite;
+  transition: border-color 0.5s ease;
+  pointer-events: none;
+}
+
+.stage-pulse-halo {
+  position: absolute;
+  inset: 8px;
+  border-radius: 50%;
+  background: var(--stage-glow);
+  filter: blur(14px);
+  animation: haloBreathe 2.4s ease-in-out infinite;
+  transition: background 0.5s ease;
+  pointer-events: none;
+}
+
+@keyframes orbitalRotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes haloBreathe {
+  0%, 100% {
+    transform: scale(0.92);
+    opacity: 0.5;
+  }
+  50% {
+    transform: scale(1.15);
+    opacity: 0.85;
+  }
+}
+
+/* Stacked Stage Visuals */
+.stage-visual {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transform: scale(0.82) rotate(-5deg);
+  pointer-events: none;
+  transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1), transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.stage-visual.active {
+  opacity: 1;
+  transform: scale(1) rotate(0deg);
+  pointer-events: auto;
+}
+
+.stage-svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  overflow: visible;
+}
+
+/* Micro-animations: Carbs */
+.carb-pulse-circle {
+  animation: carbHaloPulse 2s ease-in-out infinite;
+  transform-origin: center;
+}
+
+@keyframes carbHaloPulse {
+  0%, 100% { transform: scale(0.92); opacity: 0.35; }
+  50% { transform: scale(1.08); opacity: 0.65; }
+}
+
+.wheat-grains-group {
+  animation: carbWheatSway 2.6s ease-in-out infinite;
+  transform-origin: 50px 80px;
+}
+
+@keyframes carbWheatSway {
+  0%, 100% { transform: rotate(0deg); }
+  50% { transform: rotate(3deg); }
+}
+
+.sparkle {
+  animation: sparkleFloat 2s ease-in-out infinite alternate;
+}
+.spark-1 { animation-delay: 0s; }
+.spark-2 { animation-delay: 0.4s; }
+.spark-3 { animation-delay: 0.8s; }
+.spark-4 { animation-delay: 1.2s; }
+
+@keyframes sparkleFloat {
+  0% { transform: translateY(0) scale(0.8); opacity: 0.35; }
+  100% { transform: translateY(-5px) scale(1.25); opacity: 1; }
+}
+
+/* Micro-animations: Protein */
+.protein-pulse-circle {
+  animation: proteinPulse 2.2s ease-in-out infinite;
+  transform-origin: center;
+}
+
+@keyframes proteinPulse {
+  0%, 100% { transform: scale(0.92); opacity: 0.35; }
+  50% { transform: scale(1.08); opacity: 0.65; }
+}
+
+.protein-shaker-group {
+  animation: shakerTilt 2.2s ease-in-out infinite;
+  transform-origin: 50px 80px;
+}
+
+@keyframes shakerTilt {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-3deg); }
+  75% { transform: rotate(3deg); }
+}
+
+.protein-liquid-wave {
+  animation: proteinLiquidSlosh 2.4s ease-in-out infinite alternate;
+}
+
+@keyframes proteinLiquidSlosh {
+  0% { transform: translateX(-4px) translateY(1px); }
+  100% { transform: translateX(4px) translateY(-1px); }
+}
+
+.protein-ring-orbit {
+  animation: proteinRingSpin 4s linear infinite;
+  transform-origin: 50px 54px;
+}
+
+@keyframes proteinRingSpin {
+  0% { stroke-dashoffset: 0; }
+  100% { stroke-dashoffset: 40; }
+}
+
+/* Micro-animations: Running */
+.run-pulse-circle {
+  animation: runPulse 1.8s ease-in-out infinite;
+  transform-origin: center;
+}
+
+@keyframes runPulse {
+  0%, 100% { transform: scale(0.92); opacity: 0.35; }
+  50% { transform: scale(1.08); opacity: 0.65; }
+}
+
+.runner-character {
+  animation: runnerStride 0.75s ease-in-out infinite alternate;
+  transform-origin: 50px 70px;
+}
+
+@keyframes runnerStride {
+  0% { transform: translate(4px, 0) rotate(0deg); }
+  100% { transform: translate(4px, -4px) rotate(-1.5deg); }
+}
+
+.speed-line {
+  animation: speedLineRush 0.85s linear infinite;
+}
+.sl-1 { animation-delay: 0s; }
+.sl-2 { animation-delay: 0.22s; }
+.sl-3 { animation-delay: 0.45s; }
+.sl-4 { animation-delay: 0.65s; }
+
+@keyframes speedLineRush {
+  0% { transform: translateX(0); opacity: 0.9; }
+  50% { transform: translateX(-14px); opacity: 0.25; }
+  100% { transform: translateX(0); opacity: 0.9; }
+}
+
+/* Micro-animations: Gym */
+.gym-pulse-circle {
+  animation: gymPulse 2s ease-in-out infinite;
+  transform-origin: center;
+}
+
+@keyframes gymPulse {
+  0%, 100% { transform: scale(0.92); opacity: 0.35; }
+  50% { transform: scale(1.08); opacity: 0.65; }
+}
+
+.gym-dumbbell-group {
+  animation: dumbbellLift 1.8s ease-in-out infinite;
+  transform-origin: 50px 50px;
+}
+
+@keyframes dumbbellLift {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-7px) scale(1.03); }
+}
+
+.gym-spark {
+  animation: gymSparkPulse 1.6s ease-in-out infinite alternate;
+}
+
+@keyframes gymSparkPulse {
+  0% { opacity: 0.35; transform: scale(0.9); }
+  100% { opacity: 1; transform: scale(1.2); }
+}
+
+/* Micro-animations: Success */
+.success-burst-circle {
+  animation: successBurst 1.2s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+  transform-origin: center;
+}
+
+@keyframes successBurst {
+  0% { transform: scale(0.9); opacity: 0.8; }
+  100% { transform: scale(1.3); opacity: 0; }
+}
+
+.success-check-path {
+  stroke-dasharray: 60;
+  stroke-dashoffset: 60;
+  animation: checkDraw 0.5s ease-out forwards;
+}
+
+@keyframes checkDraw {
+  to { stroke-dashoffset: 0; }
+}
+
+/* Text Area */
+.profile-loader-text-area {
+  margin-bottom: 12px;
+}
+
+.profile-loader-title {
+  font-size: 19px;
+  font-weight: 800;
+  color: var(--text-main);
+  margin-bottom: 5px;
+  letter-spacing: -0.2px;
+  transition: color 0.3s ease;
+}
+
+.profile-loader-desc {
+  font-size: 12.5px;
+  color: var(--text-muted);
+  line-height: 1.45;
+  min-height: 36px;
+  max-width: 290px;
+  margin: 0 auto;
+}
+
+/* 4 Step Pills Row */
+.profile-loader-pills {
+  display: flex;
+  gap: 6px;
+  width: 100%;
+  justify-content: center;
+  margin-bottom: 14px;
+}
+
+.loader-pill {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 10px;
+  border-radius: 9999px;
+  background: rgba(0, 0, 0, 0.04);
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--text-light);
+  transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  border: 1px solid transparent;
+}
+
+[data-theme="dark"] .loader-pill,
+body.dark-theme .loader-pill {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.loader-pill-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.5;
+  transition: opacity 0.3s ease;
+}
+
+.loader-pill.active .loader-pill-dot {
+  opacity: 1;
+  box-shadow: 0 0 6px currentColor;
+}
+
+.loader-pill-emoji {
+  font-size: 11px;
+}
+
+/* Individual Pill Active Styles */
+#pillCarbs.active {
+  background: #fef3c7;
+  color: #b45309;
+  border-color: rgba(245, 158, 11, 0.35);
+  box-shadow: 0 4px 14px rgba(245, 158, 11, 0.25);
+  transform: translateY(-2px);
+}
+
+[data-theme="dark"] #pillCarbs.active,
+body.dark-theme #pillCarbs.active {
+  background: #3b280a;
+  color: #fbbf24;
+}
+
+#pillProtein.active {
+  background: #e0f2fe;
+  color: #0369a1;
+  border-color: rgba(56, 189, 248, 0.35);
+  box-shadow: 0 4px 14px rgba(56, 189, 248, 0.25);
+  transform: translateY(-2px);
+}
+
+[data-theme="dark"] #pillProtein.active,
+body.dark-theme #pillProtein.active {
+  background: #082f49;
+  color: #38bdf8;
+}
+
+#pillRunning.active {
+  background: #dcfce7;
+  color: #15803d;
+  border-color: rgba(168, 85, 247, 0.35);
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.25);
+  transform: translateY(-2px);
+}
+
+[data-theme="dark"] #pillRunning.active,
+body.dark-theme #pillRunning.active {
+  background: #064e3b;
+  color: #34d399;
+}
+
+#pillGym.active {
+  background: #f3e8ff;
+  color: #7e22ce;
+  border-color: rgba(168, 85, 247, 0.35);
+  box-shadow: 0 4px 14px rgba(168, 85, 247, 0.25);
+  transform: translateY(-2px);
+}
+
+[data-theme="dark"] #pillGym.active,
+body.dark-theme #pillGym.active {
+  background: #4a154b;
+  color: #c084fc;
+}
+
+/* Progress Track & Fill */
+.profile-loader-progress-track {
+  width: 100%;
+  height: 5px;
+  background: rgba(0, 0, 0, 0.06);
+  border-radius: 9999px;
+  overflow: hidden;
+  margin-bottom: 11px;
+}
+
+[data-theme="dark"] .profile-loader-progress-track,
+body.dark-theme .profile-loader-progress-track {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.profile-loader-progress-fill {
+  height: 100%;
+  width: 25%;
+  background: linear-gradient(90deg, #f59e0b, #38bdf8, #10b981, #a855f7);
+  background-size: 200% 100%;
+  animation: gradientShimmer 2.4s linear infinite;
+  border-radius: 9999px;
+  transition: width 0.5s ease;
+}
+
+@keyframes gradientShimmer {
+  0% { background-position: 100% 0%; }
+  100% { background-position: -100% 0%; }
+}
+
+.profile-loader-footer-hint {
+  font-size: 11px;
+  color: var(--text-light);
+  font-weight: 500;
+  letter-spacing: 0.1px;
+}

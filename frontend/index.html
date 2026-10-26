@@ -7,7 +7,7 @@
   <title>Macroly - AI Nutrition & Macro Tracker</title>
   <meta name="description"
     content="Conversational AI-powered calorie and macro tracking application. Chat to log meals and track nutrition in real time.">
-  <link rel="stylesheet" href="css/styles.css?v=3.3">
+  <link rel="stylesheet" href="css/styles.css?v=3.4">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 
@@ -246,8 +246,8 @@
             </div>
             <div class="vital-details">
               <span class="vital-label">WORKOUT</span>
-              <span class="vital-stat-val" id="workoutKcalVal">320 <span class="vital-sub-val">kcal</span></span>
-              <span class="vital-sub-val" id="workoutMinsVal">(45m)</span>
+              <span class="vital-stat-val" id="workoutKcalVal">0 <span class="vital-sub-val">kcal</span></span>
+              <span class="vital-sub-val" id="workoutMinsVal">(0m)</span>
             </div>
           </div>
 
@@ -258,7 +258,7 @@
             </div>
             <div class="vital-details">
               <span class="vital-label">HYDRATION</span>
-              <span class="vital-stat-val" id="hydrationVal">2.1 <span class="vital-sub-val">/ 3.0 L</span></span>
+              <span class="vital-stat-val" id="hydrationVal">0.0 <span class="vital-sub-val">/ 2.5 L</span></span>
               <span class="vital-sub-val" style="color: var(--primary);">+250ml tap</span>
             </div>
           </div>
@@ -270,8 +270,8 @@
             </div>
             <div class="vital-details">
               <span class="vital-label">WEIGHT</span>
-              <span class="vital-stat-val" id="weightVal">64.2 <span class="vital-sub-val">kg</span></span>
-              <span class="vital-sub-val">Target 62kg</span>
+              <span class="vital-stat-val" id="weightVal">-- <span class="vital-sub-val">kg</span></span>
+              <span class="vital-sub-val">Target --</span>
             </div>
           </div>
         </div>
@@ -280,7 +280,7 @@
         <div class="log-section-header">
           <div class="log-title-wrap">
             <h2 class="log-main-heading">Today's Log</h2>
-            <span class="log-count-pill" id="mealsCountPill">3 meals</span>
+            <span class="log-count-pill" id="mealsCountPill">0 meals</span>
           </div>
           <span class="log-view-all-link" id="viewAllLink">View All &rarr;</span>
         </div>
@@ -476,20 +476,20 @@
             <div class="clay-vital-subcard clickable" id="vitalsWeightSubcard" title="Click to update weight">
               <span class="clay-vital-title">WEIGHT</span>
               <div class="clay-vital-num-row">
-                <span class="clay-vital-num" id="profileWeightVal">64.2</span>
+                <span class="clay-vital-num" id="profileWeightVal">--</span>
                 <span class="clay-vital-unit">kg</span>
               </div>
-              <span class="clay-vital-target-green" id="profileGoalWeightVal">Goal: 62.0</span>
+              <span class="clay-vital-target-green" id="profileGoalWeightVal">Goal: --</span>
               <span class="vital-edit-hint">Tap to edit ✎</span>
             </div>
 
             <div class="clay-vital-subcard clickable" id="vitalsHeightSubcard" title="Click to update height">
               <span class="clay-vital-title">HEIGHT</span>
               <div class="clay-vital-num-row">
-                <span class="clay-vital-num" id="profileHeightVal">172</span>
+                <span class="clay-vital-num" id="profileHeightVal">--</span>
                 <span class="clay-vital-unit">cm</span>
               </div>
-              <span class="clay-vital-target-muted" id="profileBmiVal">BMI 21.7</span>
+              <span class="clay-vital-target-muted" id="profileBmiVal">BMI --</span>
               <span class="vital-edit-hint">Tap to edit ✎</span>
             </div>
           </div>
@@ -1084,6 +1084,219 @@
       </div>
     </div>
 
+    <!-- ================= PROFILE INITIALIZING / LOADING OVERLAY ================= -->
+    <div class="profile-loader-overlay hidden" id="profileLoaderOverlay" role="dialog" aria-modal="true" aria-label="Loading your profile">
+      <div class="profile-loader-ambient-glow" id="profileLoaderAmbientGlow"></div>
+      
+      <div class="profile-loader-card" id="profileLoaderCard">
+        <!-- Live status pill -->
+        <div class="profile-loader-status-pill">
+          <span class="profile-loader-dot"></span>
+          <span class="profile-loader-status-text" id="profileLoaderStatus">Syncing your account...</span>
+        </div>
+
+        <!-- Stage Animation Canvas Container -->
+        <div class="profile-loader-stage" id="profileLoaderStage">
+          <div class="stage-orbital-ring"></div>
+          <div class="stage-pulse-halo" id="stagePulseHalo"></div>
+          
+          <!-- Graphic 1: CARBS -->
+          <div class="stage-visual active" data-stage="carbs" id="stageGraphicCarbs">
+            <svg class="stage-svg" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="50" cy="50" r="38" fill="url(#carbsAuraGrad)" opacity="0.45" class="carb-pulse-circle" />
+              <defs>
+                <radialGradient id="carbsAuraGrad" cx="50%" cy="50%" r="50%">
+                  <stop offset="0%" stop-color="#fbbf24" stop-opacity="0.9"/>
+                  <stop offset="100%" stop-color="#f59e0b" stop-opacity="0"/>
+                </radialGradient>
+                <linearGradient id="carbWheatGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#fef08a"/>
+                  <stop offset="50%" stop-color="#f59e0b"/>
+                  <stop offset="100%" stop-color="#d97706"/>
+                </linearGradient>
+              </defs>
+              <!-- Stem -->
+              <path d="M50 82 Q49 52 50 20" stroke="#d97706" stroke-width="3" stroke-linecap="round" class="wheat-stem"/>
+              <!-- Grains -->
+              <g class="wheat-grains-group">
+                <ellipse cx="43" cy="30" rx="6" ry="3.5" transform="rotate(-30 43 30)" fill="url(#carbWheatGrad)"/>
+                <ellipse cx="57" cy="30" rx="6" ry="3.5" transform="rotate(30 57 30)" fill="url(#carbWheatGrad)"/>
+                <ellipse cx="41" cy="42" rx="7" ry="4" transform="rotate(-32 41 42)" fill="url(#carbWheatGrad)"/>
+                <ellipse cx="59" cy="42" rx="7" ry="4" transform="rotate(32 59 42)" fill="url(#carbWheatGrad)"/>
+                <ellipse cx="42" cy="54" rx="7" ry="4" transform="rotate(-30 42 54)" fill="url(#carbWheatGrad)"/>
+                <ellipse cx="58" cy="54" rx="7" ry="4" transform="rotate(30 58 54)" fill="url(#carbWheatGrad)"/>
+                <ellipse cx="44" cy="65" rx="6" ry="3.8" transform="rotate(-28 44 65)" fill="url(#carbWheatGrad)"/>
+                <ellipse cx="56" cy="65" rx="6" ry="3.8" transform="rotate(28 56 65)" fill="url(#carbWheatGrad)"/>
+                <ellipse cx="50" cy="20" rx="4.5" ry="7" fill="url(#carbWheatGrad)"/>
+              </g>
+              <!-- Floating Energy Sparks -->
+              <circle cx="28" cy="34" r="2.5" fill="#fef08a" class="sparkle spark-1"/>
+              <circle cx="72" cy="38" r="3" fill="#fef08a" class="sparkle spark-2"/>
+              <circle cx="34" cy="64" r="2" fill="#fbbf24" class="sparkle spark-3"/>
+              <circle cx="68" cy="60" r="2.5" fill="#fef08a" class="sparkle spark-4"/>
+            </svg>
+          </div>
+
+          <!-- Graphic 2: PROTEIN -->
+          <div class="stage-visual" data-stage="protein" id="stageGraphicProtein">
+            <svg class="stage-svg" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="50" cy="50" r="38" fill="url(#proteinAuraGrad)" opacity="0.45" class="protein-pulse-circle" />
+              <defs>
+                <radialGradient id="proteinAuraGrad" cx="50%" cy="50%" r="50%">
+                  <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.9"/>
+                  <stop offset="100%" stop-color="#0284c7" stop-opacity="0"/>
+                </radialGradient>
+                <linearGradient id="liquidGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stop-color="#38bdf8"/>
+                  <stop offset="100%" stop-color="#0284c7"/>
+                </linearGradient>
+              </defs>
+              <g class="protein-shaker-group">
+                <!-- Bottle Lid -->
+                <path d="M38 27 H62 V21 C62 19 60 18 58 18 H42 C40 18 38 19 38 21 Z" fill="#e0f2fe" stroke="#38bdf8" stroke-width="1.8"/>
+                <rect x="52" y="13" width="7" height="6" rx="2" fill="#38bdf8"/>
+                <!-- Bottle Body (Tapered) -->
+                <path d="M36 29 L41 78 C41.5 81 44 83 47 83 H53 C56 83 58.5 81 59 78 L64 29 Z" fill="#0f172a" stroke="#38bdf8" stroke-width="2.2" opacity="0.9"/>
+                <!-- Liquid Fill Level with Wave -->
+                <clipPath id="shakerClip">
+                  <path d="M37 30 L41 77 C41.5 80 44 82 47 82 H53 C56 82 58.5 80 59 77 L63 30 Z"/>
+                </clipPath>
+                <g clip-path="url(#shakerClip)">
+                  <path d="M30 46 Q40 40 50 46 T70 46 V90 H30 Z" fill="url(#liquidGrad)" class="protein-liquid-wave"/>
+                  <line x1="58" y1="42" x2="62" y2="42" stroke="rgba(255,255,255,0.7)" stroke-width="1.5"/>
+                  <line x1="57" y1="52" x2="61" y2="52" stroke="rgba(255,255,255,0.7)" stroke-width="1.5"/>
+                  <line x1="56" y1="62" x2="60" y2="62" stroke="rgba(255,255,255,0.7)" stroke-width="1.5"/>
+                </g>
+                <ellipse cx="50" cy="54" rx="28" ry="10" stroke="#7dd3fc" stroke-width="2.5" stroke-dasharray="5 3" fill="none" class="protein-ring-orbit"/>
+              </g>
+              <circle cx="26" cy="40" r="2.5" fill="#38bdf8" class="sparkle spark-1"/>
+              <circle cx="74" cy="36" r="3" fill="#7dd3fc" class="sparkle spark-2"/>
+              <circle cx="72" cy="66" r="2" fill="#0284c7" class="sparkle spark-3"/>
+            </svg>
+          </div>
+
+          <!-- Graphic 3: RUNNING -->
+          <div class="stage-visual" data-stage="running" id="stageGraphicRunning">
+            <svg class="stage-svg" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="50" cy="50" r="38" fill="url(#runAuraGrad)" opacity="0.45" class="run-pulse-circle" />
+              <defs>
+                <radialGradient id="runAuraGrad" cx="50%" cy="50%" r="50%">
+                  <stop offset="0%" stop-color="#34d399" stop-opacity="0.9"/>
+                  <stop offset="100%" stop-color="#059669" stop-opacity="0"/>
+                </radialGradient>
+                <linearGradient id="runnerGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#a7f3d0"/>
+                  <stop offset="50%" stop-color="#34d399"/>
+                  <stop offset="100%" stop-color="#059669"/>
+                </linearGradient>
+              </defs>
+              <!-- Speed trails / wind streaks -->
+              <g class="running-speed-trails">
+                <line x1="8" y1="36" x2="30" y2="36" stroke="#34d399" stroke-width="2.5" stroke-linecap="round" class="speed-line sl-1"/>
+                <line x1="4" y1="48" x2="24" y2="48" stroke="#6ee7b7" stroke-width="3" stroke-linecap="round" class="speed-line sl-2"/>
+                <line x1="12" y1="60" x2="34" y2="60" stroke="#10b981" stroke-width="2" stroke-linecap="round" class="speed-line sl-3"/>
+                <line x1="6" y1="72" x2="26" y2="72" stroke="#34d399" stroke-width="2" stroke-linecap="round" class="speed-line sl-4"/>
+              </g>
+              <!-- Sprinter Figure in Motion -->
+              <g class="runner-character" transform="translate(4, 0)">
+                <circle cx="58" cy="25" r="7" fill="url(#runnerGrad)"/>
+                <path d="M56 32 L49 53" stroke="url(#runnerGrad)" stroke-width="4.5" stroke-linecap="round"/>
+                <path d="M49 53 L62 57 L68 70" stroke="url(#runnerGrad)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M49 53 L38 66 L25 74" stroke="url(#runnerGrad)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M54 36 L43 45 L40 56" stroke="url(#runnerGrad)" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M54 36 L66 42 L74 38" stroke="url(#runnerGrad)" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+              </g>
+              <path d="M22 82 Q50 85 82 82" stroke="#34d399" stroke-width="2" stroke-linecap="round" stroke-dasharray="6 4" opacity="0.7"/>
+            </svg>
+          </div>
+
+          <!-- Graphic 4: GYM -->
+          <div class="stage-visual" data-stage="gym" id="stageGraphicGym">
+            <svg class="stage-svg" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="50" cy="50" r="38" fill="url(#gymAuraGrad)" opacity="0.45" class="gym-pulse-circle" />
+              <defs>
+                <radialGradient id="gymAuraGrad" cx="50%" cy="50%" r="50%">
+                  <stop offset="0%" stop-color="#c084fc" stop-opacity="0.9"/>
+                  <stop offset="100%" stop-color="#7e22ce" stop-opacity="0"/>
+                </radialGradient>
+                <linearGradient id="ironPlateGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#f3e8ff"/>
+                  <stop offset="50%" stop-color="#a855f7"/>
+                  <stop offset="100%" stop-color="#6b21a8"/>
+                </linearGradient>
+                <linearGradient id="barbellShaftGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stop-color="#ffffff"/>
+                  <stop offset="100%" stop-color="#d8b4fe"/>
+                </linearGradient>
+              </defs>
+              <g class="gym-dumbbell-group">
+                <rect x="22" y="47" width="56" height="6" rx="3" fill="url(#barbellShaftGrad)" stroke="#6b21a8" stroke-width="1"/>
+                <line x1="38" y1="47" x2="62" y2="47" stroke="#7e22ce" stroke-width="1.2" stroke-dasharray="2 1.5"/>
+                <rect x="18" y="32" width="6" height="36" rx="2.5" fill="url(#ironPlateGrad)" stroke="#581c87" stroke-width="1.2"/>
+                <rect x="25" y="25" width="8" height="50" rx="3" fill="url(#ironPlateGrad)" stroke="#581c87" stroke-width="1.4"/>
+                <rect x="33" y="43" width="3.5" height="14" rx="1.5" fill="#f3e8ff"/>
+
+                <rect x="67" y="25" width="8" height="50" rx="3" fill="url(#ironPlateGrad)" stroke="#581c87" stroke-width="1.4"/>
+                <rect x="76" y="32" width="6" height="36" rx="2.5" fill="url(#ironPlateGrad)" stroke="#581c87" stroke-width="1.2"/>
+                <rect x="63.5" y="43" width="3.5" height="14" rx="1.5" fill="#f3e8ff"/>
+              </g>
+              <path d="M50 16 L50 24 M50 76 L50 84" stroke="#c084fc" stroke-width="2.5" stroke-linecap="round" class="gym-spark"/>
+              <path d="M26 18 L32 24 M74 18 L68 24" stroke="#f3e8ff" stroke-width="2" stroke-linecap="round" class="gym-spark"/>
+              <path d="M12 50 L18 50 M82 50 L88 50" stroke="#c084fc" stroke-width="2.5" stroke-linecap="round" class="gym-spark"/>
+            </svg>
+          </div>
+
+          <!-- Graphic 5: SUCCESS CHECK -->
+          <div class="stage-visual" data-stage="success" id="stageGraphicSuccess">
+            <svg class="stage-svg" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="50" cy="50" r="38" fill="rgba(34, 197, 94, 0.25)" class="success-burst-circle"/>
+              <circle cx="50" cy="50" r="32" fill="#22c55e" stroke="#86efac" stroke-width="3"/>
+              <path d="M35 51 L46 62 L66 39" stroke="#ffffff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" class="success-check-path"/>
+            </svg>
+          </div>
+        </div>
+
+        <!-- Dynamic Stage Text -->
+        <div class="profile-loader-text-area">
+          <h3 class="profile-loader-title" id="profileLoaderTitle">Balancing Energy & Carbs</h3>
+          <p class="profile-loader-desc" id="profileLoaderDesc">Optimizing clean fuel & daily glycogen targets...</p>
+        </div>
+
+        <!-- 4 Step Macro / Workout Tracker Pills -->
+        <div class="profile-loader-pills">
+          <div class="loader-pill active" id="pillCarbs" data-target="carbs">
+            <span class="loader-pill-dot"></span>
+            <span class="loader-pill-emoji">🌾</span>
+            <span class="loader-pill-label">Carbs</span>
+          </div>
+          <div class="loader-pill" id="pillProtein" data-target="protein">
+            <span class="loader-pill-dot"></span>
+            <span class="loader-pill-emoji">🥩</span>
+            <span class="loader-pill-label">Protein</span>
+          </div>
+          <div class="loader-pill" id="pillRunning" data-target="running">
+            <span class="loader-pill-dot"></span>
+            <span class="loader-pill-emoji">🏃</span>
+            <span class="loader-pill-label">Running</span>
+          </div>
+          <div class="loader-pill" id="pillGym" data-target="gym">
+            <span class="loader-pill-dot"></span>
+            <span class="loader-pill-emoji">🏋️</span>
+            <span class="loader-pill-label">Gym</span>
+          </div>
+        </div>
+
+        <!-- Progress Bar -->
+        <div class="profile-loader-progress-track">
+          <div class="profile-loader-progress-fill" id="profileLoaderProgressFill"></div>
+        </div>
+
+        <div class="profile-loader-footer-hint" id="profileLoaderHint">
+          Personalizing your nutrition profile & daily targets...
+        </div>
+      </div>
+    </div>
+
     <!-- ================= AUTHENTICATION OVERLAY ================= -->
     <div class="auth-overlay hidden" id="authOverlay">
       <div class="auth-card">
@@ -1218,7 +1431,7 @@
   </div>
 
   <script src="js/api.js?v=3.5"></script>
-  <script src="js/app.js?v=3.6"></script>
+  <script src="js/app.js?v=3.7"></script>
 </body>
 
 </html>
