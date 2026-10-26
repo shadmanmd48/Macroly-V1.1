@@ -1,5 +1,7 @@
 // Macroly REST API Client with Supabase Bearer Authentication
 const RENDER_BACKEND_URL = "https://macroly-v1-1.onrender.com";
+const DEFAULT_SUPABASE_URL = "https://xvlyyyjaeseewvuvlwur.supabase.co";
+const DEFAULT_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh2bHl5eWphZXNlZXd2dXZsd3VyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkyODU1MDMsImV4cCI6MjEwNDg2MTUwM30.b6VEA57s8IIx-AXXu_gMlp8WBjvp7X0bPJDQ1K8h8Lw";
 
 const isCapacitor = typeof window !== "undefined" && (
   (window.Capacitor && typeof window.Capacitor.isNativePlatform === "function" && window.Capacitor.isNativePlatform()) ||
@@ -7,14 +9,22 @@ const isCapacitor = typeof window !== "undefined" && (
   (window.location.hostname === "localhost" && !window.location.port)
 );
 
-const isLocalMachine = typeof window !== "undefined" && 
-  (window.location.hostname === "127.0.0.1" || 
-   (window.location.hostname === "localhost" && window.location.port && window.location.port !== "8000") ||
-   window.location.protocol === "file:");
+let detectedApiBase = "";
+if (typeof window !== "undefined") {
+  const isLocalHost = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
+  if (isLocalHost) {
+    if (window.location.port === "8000") {
+      detectedApiBase = "http://127.0.0.1:8000";
+    } else {
+      // When testing on static server (e.g. port 3000), connect to live cloud backend
+      detectedApiBase = RENDER_BACKEND_URL;
+    }
+  } else if (isCapacitor || window.location.protocol === "file:") {
+    detectedApiBase = RENDER_BACKEND_URL;
+  }
+}
 
-const API_BASE = isCapacitor
-  ? RENDER_BACKEND_URL
-  : (isLocalMachine ? "http://127.0.0.1:8000" : "");
+const API_BASE = detectedApiBase;
 
 const api = {
   authToken: localStorage.getItem("macroly_auth_token") || "",
@@ -122,18 +132,21 @@ const api = {
   },
 
   async getConfig() {
-    let res;
     try {
-      res = await fetch(`${API_BASE}/api/config`);
-    } catch (err) {
-      console.warn("Direct /api/config failed, checking server wake-up status...", err);
-      const isAwake = await this.wakeUpServer();
-      if (!isAwake) {
-        throw new Error("Cloud server could not be reached. Please check your internet connection.");
+      const res = await fetch(`${API_BASE}/api/config`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.supabase_url && data.supabase_anon_key) {
+          return data;
+        }
       }
-      res = await fetch(`${API_BASE}/api/config`);
+    } catch (err) {
+      console.warn("Direct /api/config failed, using fallback config...", err);
     }
-    return await this._handleResponse(res, "Failed to fetch Supabase config");
+    return {
+      supabase_url: DEFAULT_SUPABASE_URL,
+      supabase_anon_key: DEFAULT_SUPABASE_ANON_KEY
+    };
   },
 
   async getUserProfile() {

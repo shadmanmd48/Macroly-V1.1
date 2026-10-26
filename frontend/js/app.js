@@ -2089,6 +2089,25 @@ document.addEventListener("DOMContentLoaded", () => {
 
     initCapacitorAuthDeepLinking();
 
+    // 1. Initialize Supabase Client IMMEDIATELY with config/fallback so auth is instant!
+    try {
+      const config = await api.getConfig();
+      if (window.supabase && config.supabase_url && config.supabase_anon_key) {
+        supabaseClient = window.supabase.createClient(config.supabase_url, config.supabase_anon_key);
+
+        supabaseClient.auth.onAuthStateChange(async (event, session) => {
+          if (session && session.access_token) {
+            await handleAuthSuccess(session.access_token);
+          } else if (!api.getAuthToken()) {
+            dismissProfileLoadingOverlay();
+            showAuthOverlay();
+          }
+        });
+      }
+    } catch (e) {
+      console.warn("Immediate Supabase init error:", e);
+    }
+
     // Check if returning from Google OAuth redirect
     const isOAuthReturn = window.location.hash.includes("access_token") || 
                           window.location.search.includes("code=") ||
@@ -2101,45 +2120,27 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     }
 
-    try {
-      // Monitor cold start / free tier spin-up
-      const slowTimer = setTimeout(() => {
-        showServerWakeup();
-      }, 2000);
-
-      const isAwake = await api.wakeUpServer({
-        onSlowNotice: () => showServerWakeup(),
-        onProgress: ({ attempt, elapsed }) => updateServerWakeupStatus(attempt, elapsed),
-        maxSeconds: 90
-      });
-      clearTimeout(slowTimer);
-      hideServerWakeup(isAwake);
-
-      const config = await api.getConfig();
-      if (window.supabase && config.supabase_url && config.supabase_anon_key) {
-        supabaseClient = window.supabase.createClient(config.supabase_url, config.supabase_anon_key);
-
-        // Check active session on page load (e.g. after redirect or persisted session)
+    // 2. Check active session on page load (e.g. after redirect or persisted session)
+    if (supabaseClient) {
+      try {
         const { data: { session } } = await supabaseClient.auth.getSession();
         if (session && session.access_token) {
           await handleAuthSuccess(session.access_token);
           return;
         }
-
-        // Subscribe to auth state updates (e.g. after Google OAuth redirect)
-        supabaseClient.auth.onAuthStateChange(async (event, session) => {
-          if (session && session.access_token) {
-            await handleAuthSuccess(session.access_token);
-          } else if (!api.getAuthToken()) {
-            dismissProfileLoadingOverlay();
-            showAuthOverlay();
-          }
-        });
-      }
-    } catch (e) {
-      console.warn("Supabase init error:", e);
-      hideServerWakeup(false);
+      } catch (e) {}
     }
+
+    // 3. Monitor cold start in background without blocking Google button
+    api.wakeUpServer({
+      onSlowNotice: () => showServerWakeup(),
+      onProgress: ({ attempt, elapsed }) => updateServerWakeupStatus(attempt, elapsed),
+      maxSeconds: 90
+    }).then((isAwake) => {
+      hideServerWakeup(isAwake);
+    }).catch(() => {
+      hideServerWakeup(false);
+    });
 
     // Check existing stored token (e.g. demo account)
     const existingToken = api.getAuthToken();
