@@ -3848,6 +3848,7 @@ body.dark-theme .selected-meal-name {
   flex-direction: column;
   align-items: center;
   text-align: center;
+  overflow: hidden;
   transition: box-shadow 0.5s ease, border-color 0.5s ease;
 }
 
@@ -4151,27 +4152,44 @@ body.dark-theme .profile-loader-status-pill {
   margin: 0 auto;
 }
 
-/* 4 Step Pills Row */
+/* Step Pill Row: show one at a time in the horizontal line */
 .profile-loader-pills {
   display: flex;
-  gap: 4px;
-  width: 100%;
+  align-items: center;
   justify-content: center;
+  width: 100%;
+  min-height: 28px;
   margin-bottom: 9px;
 }
 
 .loader-pill {
-  display: flex;
+  display: none;
   align-items: center;
-  gap: 4px;
-  padding: 3.5px 7px;
+  gap: 5px;
+  padding: 4px 12px;
   border-radius: 9999px;
   background: rgba(0, 0, 0, 0.04);
-  font-size: 10.5px;
+  font-size: 11px;
   font-weight: 700;
   color: var(--text-light);
-  transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
   border: 1px solid transparent;
+  transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: pillSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.loader-pill.active {
+  display: inline-flex;
+}
+
+@keyframes pillSlideUp {
+  0% {
+    opacity: 0;
+    transform: translateY(5px) scale(0.96);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 [data-theme="dark"] .loader-pill,
