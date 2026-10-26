@@ -20,12 +20,13 @@ def is_postgres() -> bool:
 
 def get_database_info() -> Dict[str, Any]:
     if is_postgres():
-        target = DATABASE_URL.split("@")[-1] if "@" in DATABASE_URL else "PostgreSQL"
-        return {"engine": "PostgreSQL", "target": target, "is_postgres": True}
+        raw_target = DATABASE_URL.split("@")[-1] if "@" in DATABASE_URL else "PostgreSQL"
+        clean_target = raw_target.split("?")[0] if "?" in raw_target else raw_target
+        return {"engine": "PostgreSQL", "target": clean_target, "is_postgres": True}
     elif DATABASE_URL.startswith("sqlite:///"):
-        return {"engine": "SQLite", "target": DATABASE_URL.replace("sqlite:///", ""), "is_postgres": False}
+        return {"engine": "SQLite", "target": "Local SQLite Database", "is_postgres": False}
     else:
-        return {"engine": "SQLite (Fallback)", "target": SQLITE_DB_PATH, "is_postgres": False}
+        return {"engine": "SQLite (Fallback)", "target": "Local SQLite Fallback", "is_postgres": False}
 
 SEEDED_FOODS = [
     # Item Name, Serving Unit, Default Qty, Calories, Protein, Carbs, Fats, Tags

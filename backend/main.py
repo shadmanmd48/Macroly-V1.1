@@ -49,11 +49,19 @@ app = FastAPI(title="Macroly AI Nutrition Tracker API", version="3.0.0", lifespa
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "*",
-        "https://localhost",
         "http://localhost",
-        "capacitor://localhost"
+        "https://localhost",
+        "http://localhost:3000",
+        "http://localhost:5173",
+        "http://localhost:8000",
+        "http://127.0.0.1",
+        "http://127.0.0.1:3000",
+        "http://127.0.0.1:5173",
+        "http://127.0.0.1:8000",
+        "capacitor://localhost",
+        "https://macroly-v1-1.onrender.com"
     ],
+    allow_origin_regex=r"^https?://(localhost|127\.0\.0\.1)(:\d+)?$|^capacitor://localhost$|^https://.*\.onrender\.com$",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

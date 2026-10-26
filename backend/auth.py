@@ -27,6 +27,19 @@ ENABLE_DEMO_AUTH = (
 # In-memory token validation cache: token -> (UserProfile, expiry_timestamp)
 _TOKEN_CACHE: Dict[str, Tuple[UserProfile, float]] = {}
 CACHE_TTL_SECONDS = 60
+MAX_CACHE_ENTRIES = 500
+
+def _prune_token_cache(now: float) -> None:
+    """Evicts expired tokens and bounds cache size to prevent memory exhaustion (DoS mitigation)."""
+    if len(_TOKEN_CACHE) >= MAX_CACHE_ENTRIES:
+        expired = [t for t, (_, exp) in _TOKEN_CACHE.items() if exp <= now]
+        for t in expired:
+            _TOKEN_CACHE.pop(t, None)
+        if len(_TOKEN_CACHE) >= MAX_CACHE_ENTRIES:
+            sorted_by_expiry = sorted(_TOKEN_CACHE.items(), key=lambda item: item[1][1])
+            excess = (len(_TOKEN_CACHE) - MAX_CACHE_ENTRIES) + 50
+            for t, _ in sorted_by_expiry[:excess]:
+                _TOKEN_CACHE.pop(t, None)
 
 def verify_supabase_token(token: str) -> UserProfile:
     """Verifies a Supabase Auth JWT token using the Supabase Auth API."""
@@ -37,6 +50,8 @@ def verify_supabase_token(token: str) -> UserProfile:
             return cached_user
         else:
             del _TOKEN_CACHE[token]
+
+    _prune_token_cache(now)
 
     # Special demo token: only allowed if explicitly enabled in non-production environments
     if token == "elena-demo-token":

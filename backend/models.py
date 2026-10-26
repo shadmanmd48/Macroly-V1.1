@@ -45,9 +45,9 @@ class Vitals(BaseModel):
     target_weight_kg: float = 62.0
 
 class UpdateVitalsRequest(BaseModel):
-    weight_kg: Optional[float] = None
-    height_cm: Optional[float] = None
-    target_weight_kg: Optional[float] = None
+    weight_kg: Optional[float] = Field(default=None, ge=10.0, le=500.0)
+    height_cm: Optional[float] = Field(default=None, ge=40.0, le=300.0)
+    target_weight_kg: Optional[float] = Field(default=None, ge=10.0, le=500.0)
 
 class ChatMessage(BaseModel):
     id: str
@@ -81,9 +81,9 @@ class DashboardSummary(BaseModel):
     meals: List[MealLog] = []
 
 class ChatRequest(BaseModel):
-    message: str
-    session_id: Optional[str] = "default"
-    selected_meal_type: Optional[str] = None
+    message: str = Field(..., min_length=1, max_length=4000)
+    session_id: Optional[str] = Field(default="default", max_length=128)
+    selected_meal_type: Optional[str] = Field(default=None, max_length=64)
 
 class ManualOverrideRequest(BaseModel):
     meal_id: str
@@ -107,15 +107,15 @@ class UserProfile(BaseModel):
     is_onboarded: bool = False
 
 class UpdateGoalsRequest(BaseModel):
-    calorie_goal: int = 2000
-    protein_goal: float = 130.0
-    carb_goal: float = 220.0
-    fat_goal: float = 65.0
-    display_name: Optional[str] = None
-    avatar_url: Optional[str] = None
+    calorie_goal: int = Field(default=2000, ge=500, le=20000)
+    protein_goal: float = Field(default=130.0, ge=0.0, le=1000.0)
+    carb_goal: float = Field(default=220.0, ge=0.0, le=1000.0)
+    fat_goal: float = Field(default=65.0, ge=0.0, le=1000.0)
+    display_name: Optional[str] = Field(default=None, max_length=100)
+    avatar_url: Optional[str] = Field(default=None, max_length=1024)
 
 class UpdateAvatarRequest(BaseModel):
-    avatar_url: str
+    avatar_url: str = Field(..., min_length=1, max_length=1024)
 
 class DailyHistoryItem(BaseModel):
     id: str

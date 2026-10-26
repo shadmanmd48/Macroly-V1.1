@@ -1,5 +1,16 @@
 // Macroly Application Logic & Real-Time Sync
 document.addEventListener("DOMContentLoaded", () => {
+  // Security: HTML sanitization helper to prevent XSS injection
+  function escapeHtml(str) {
+    if (str === null || str === undefined) return "";
+    return String(str)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  }
+
   // DOM Elements
   const dashboardView = document.getElementById("dashboardView");
   const chatView = document.getElementById("chatView");
@@ -441,7 +452,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (profF) profF.innerHTML = `${Math.round(data.fats_target || 65)} <small>g</small>`;
 
     if (userGreeting && data.greeting) {
-      userGreeting.innerHTML = data.greeting.replace(", ", ",<br>");
+      userGreeting.innerHTML = escapeHtml(data.greeting).replace(", ", ",<br>");
     }
     const dateSubtitle = document.getElementById("dateSubtitle");
     if (dateSubtitle) {
@@ -496,15 +507,15 @@ document.addEventListener("DOMContentLoaded", () => {
       card.innerHTML = `
         <div class="meal-card-top">
           <div class="meal-card-thumb">
-            <img src="${thumbSrc}" alt="${meal.title}" onerror="this.src='assets/quinoa_bowl.jpg'">
+            <img src="${thumbSrc}" alt="${escapeHtml(meal.title)}" onerror="this.src='assets/quinoa_bowl.jpg'">
           </div>
           <div class="meal-card-details">
-            <div class="meal-time-tag">${meal.meal_type}${meal.subtitle ? ` • ${meal.subtitle.replace(new RegExp('^' + meal.meal_type + '\\s*(?:•\\s*)?', 'i'), '').trim()}` : ""}</div>
-            <div class="meal-item-name">${meal.title}</div>
+            <div class="meal-time-tag">${escapeHtml(meal.meal_type)}${meal.subtitle ? ` • ${escapeHtml(meal.subtitle.replace(new RegExp('^' + meal.meal_type + '\\s*(?:•\\s*)?', 'i'), '').trim())}` : ""}</div>
+            <div class="meal-item-name">${escapeHtml(meal.title)}</div>
             <div class="meal-item-cals">${meal.total_calories} kcal</div>
           </div>
           <div class="meal-item-actions">
-            <button class="meal-action-btn edit-meal-trigger" data-id="${meal.id}" title="Edit / Adjust">
+            <button class="meal-action-btn edit-meal-trigger" data-id="${escapeHtml(meal.id)}" title="Edit / Adjust">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                 <line x1="4" y1="21" x2="4" y2="14"/>
                 <line x1="4" y1="10" x2="4" y2="3"/>
@@ -820,7 +831,7 @@ document.addEventListener("DOMContentLoaded", () => {
           <div class="history-day-header">
             <span class="history-date-badge">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2.5"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
-              ${item.date_str}
+              ${escapeHtml(item.date_str)}
             </span>
             <span class="history-cals-badge">${Math.round(item.calories)} kcal</span>
           </div>
@@ -845,7 +856,7 @@ document.addEventListener("DOMContentLoaded", () => {
       `).join("");
     } catch (err) {
       if (historyModalList) {
-        historyModalList.innerHTML = `<div class="history-empty-placeholder" style="color:#ef4444;">Failed to load history: ${err.message}</div>`;
+        historyModalList.innerHTML = `<div class="history-empty-placeholder" style="color:#ef4444;">Failed to load history: ${escapeHtml(err.message)}</div>`;
       }
     }
   }
@@ -988,7 +999,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (latestDashboardData.meals && latestDashboardData.meals.length > 0) {
           mealsListEl.innerHTML = latestDashboardData.meals.map(m => `
             <div class="selected-meal-preview-item">
-              <span class="selected-meal-name">${m.food_name || m.title}</span>
+              <span class="selected-meal-name">${escapeHtml(m.food_name || m.title)}</span>
               <span class="selected-meal-cals">${m.calories || m.total_calories} kcal</span>
             </div>
           `).join("");
@@ -1268,8 +1279,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const bubble = document.createElement("div");
     bubble.className = "chat-bubble-user";
     bubble.innerHTML = `
-      <div class="bubble-user-content">${text}</div>
-      <div class="chat-timestamp">${time}</div>
+      <div class="bubble-user-content">${escapeHtml(text)}</div>
+      <div class="chat-timestamp">${escapeHtml(time)}</div>
     `;
     chatMessagesContainer.appendChild(bubble);
     scrollChatToBottom(true);
@@ -1284,7 +1295,7 @@ document.addEventListener("DOMContentLoaded", () => {
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
         Macroly AI • Just now
       </div>
-      <div class="ai-dialogue-text">${msg.text}</div>
+      <div class="ai-dialogue-text">${escapeHtml(msg.text)}</div>
     `;
 
     if (msg.is_update && msg.meal_data) {
@@ -1295,7 +1306,7 @@ document.addEventListener("DOMContentLoaded", () => {
           <div class="recalc-header-row">
             <div class="recalc-title-group">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
-              <span>${m.meal_type} Total Recalculated</span>
+              <span>${escapeHtml(m.meal_type)} Total Recalculated</span>
             </div>
             <span class="recalc-badge-pill">Updated</span>
           </div>
@@ -1328,7 +1339,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const m = msg.meal_data;
       const breakdownRows = (m.items || []).map(it => `
         <div class="breakdown-row">
-          <span class="breakdown-item-name">${it.quantity}x ${it.name}</span>
+          <span class="breakdown-item-name">${it.quantity}x ${escapeHtml(it.name)}</span>
           <span class="breakdown-item-cals">${it.calories} kcal</span>
         </div>
       `).join("");
@@ -1342,10 +1353,10 @@ document.addEventListener("DOMContentLoaded", () => {
               Edit
             </button>
           </div>
-          <div class="chat-meal-heading">${m.title || m.food_name || "Custom Meal"}</div>
+          <div class="chat-meal-heading">${escapeHtml(m.title || m.food_name || "Custom Meal")}</div>
           <div class="chat-meal-badges-line">
-            <span class="tag-meal-type">${m.meal_type}</span>
-            ${m.subtitle ? `<span class="tag-meal-subtitle">• ${m.subtitle.replace(new RegExp('^' + m.meal_type + '\\s*(?:•\\s*)?', 'i'), '').trim()}</span>` : ""}
+            <span class="tag-meal-type">${escapeHtml(m.meal_type)}</span>
+            ${m.subtitle ? `<span class="tag-meal-subtitle">• ${escapeHtml(m.subtitle.replace(new RegExp('^' + m.meal_type + '\\s*(?:•\\s*)?', 'i'), '').trim())}</span>` : ""}
           </div>
           <div class="chat-meal-cals-big">
             ${m.total_calories} <span>kcal</span>
@@ -1494,9 +1505,10 @@ document.addEventListener("DOMContentLoaded", () => {
   function updateSuggestionChips(suggestions) {
     const chipsScroll = document.querySelector(".quick-chips-scroll");
     if (!chipsScroll || !suggestions || !suggestions.length) return;
-    chipsScroll.innerHTML = suggestions.map(s => 
-      `<button class="suggestion-chip" data-text="${s}">${s}</button>`
-    ).join("");
+    chipsScroll.innerHTML = suggestions.map(s => {
+      const safeS = escapeHtml(s);
+      return `<button class="suggestion-chip" data-text="${safeS}">${safeS}</button>`;
+    }).join("");
     wireSuggestionChips();
   }
 
@@ -1580,7 +1592,7 @@ document.addEventListener("DOMContentLoaded", () => {
       row.className = "edit-item-row";
       row.innerHTML = `
         <div class="edit-item-info">
-          <span class="edit-item-name">${item.name}</span>
+          <span class="edit-item-name">${escapeHtml(item.name)}</span>
           <span class="edit-item-unit-cal" id="itemCal_${index}">${item.calories} kcal (${item.protein}g P, ${item.carbs}g C, ${item.fats}g F)</span>
         </div>
         <div class="edit-qty-stepper">

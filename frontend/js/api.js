@@ -26,8 +26,29 @@ if (typeof window !== "undefined") {
 
 const API_BASE = detectedApiBase;
 
+function safeGetStorage(key) {
+  try {
+    return (typeof localStorage !== "undefined" && localStorage.getItem(key)) || "";
+  } catch (e) {
+    return "";
+  }
+}
+
+function safeSetStorage(key, val) {
+  try {
+    if (typeof localStorage === "undefined") return;
+    if (val) {
+      localStorage.setItem(key, val);
+    } else {
+      localStorage.removeItem(key);
+    }
+  } catch (e) {
+    // Ignore storage quota or security errors gracefully
+  }
+}
+
 const api = {
-  authToken: localStorage.getItem("macroly_auth_token") || "",
+  authToken: safeGetStorage("macroly_auth_token"),
   onUnauthorizedCallback: null,
 
   getBaseUrl() {
@@ -40,11 +61,7 @@ const api = {
 
   setAuthToken(token) {
     this.authToken = token || "";
-    if (token) {
-      localStorage.setItem("macroly_auth_token", token);
-    } else {
-      localStorage.removeItem("macroly_auth_token");
-    }
+    safeSetStorage("macroly_auth_token", this.authToken);
   },
 
   getAuthToken() {

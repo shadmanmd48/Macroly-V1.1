@@ -273,7 +273,7 @@ class TestMacrolyFeatures(unittest.TestCase):
         self.assertEqual(egg["protein"], 12.6)
 
     # =========================================================================
-    # 6. Security: Demo Token Backdoor Guard
+    # 6. Security: Demo Token Backdoor Guard & Validation Hardening
     # =========================================================================
     def test_demo_token_disabled_by_default(self):
         """Verify that demo token is rejected when ENABLE_DEMO_AUTH is disabled."""
@@ -282,6 +282,42 @@ class TestMacrolyFeatures(unittest.TestCase):
         with self.assertRaises(HTTPException) as ctx:
             verify_supabase_token("elena-demo-token")
         self.assertEqual(ctx.exception.status_code, 401)
+
+    def test_security_input_validation_bounds(self):
+        """Ensure boundary validation prevents payload exhaustion and invalid vitals/goals."""
+        from backend.models import ChatRequest, UpdateVitalsRequest
+        from pydantic import ValidationError
+
+        # Excessively long chat message should raise ValidationError
+        with self.assertRaises(ValidationError):
+            ChatRequest(message="a" * 5000)
+
+        # Empty chat message should raise ValidationError
+        with self.assertRaises(ValidationError):
+            ChatRequest(message="")
+
+        # Absurd weight or height should raise ValidationError
+        with self.assertRaises(ValidationError):
+            UpdateVitalsRequest(weight_kg=-5.0)
+
+        with self.assertRaises(ValidationError):
+            UpdateVitalsRequest(weight_kg=1200.0)
+
+    def test_security_token_cache_bounded(self):
+        """Ensure token cache is bounded and prunes expired entries to prevent memory exhaustion."""
+        import time
+        from backend.auth import _TOKEN_CACHE, _prune_token_cache, MAX_CACHE_ENTRIES
+        from backend.models import UserProfile
+
+        now = time.time()
+        dummy_user = UserProfile(id="test-user", email="test@test.com")
+
+        # Fill cache beyond max
+        for i in range(MAX_CACHE_ENTRIES + 20):
+            _TOKEN_CACHE[f"fake_token_{i}"] = (dummy_user, now - 10)  # already expired
+
+        _prune_token_cache(now)
+        self.assertLessEqual(len(_TOKEN_CACHE), MAX_CACHE_ENTRIES)
 
 
 if __name__ == "__main__":
