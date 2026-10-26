@@ -2089,16 +2089,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
     initCapacitorAuthDeepLinking();
 
-    // Check if returning from Google OAuth or if an auth token is already stored
+    // Check if returning from Google OAuth redirect
     const isOAuthReturn = window.location.hash.includes("access_token") || 
                           window.location.search.includes("code=") ||
                           window.location.href.includes("auth-callback");
-    const hasStoredToken = !!api.getAuthToken();
 
-    if (isOAuthReturn || hasStoredToken) {
-      // Immediately show the cycling loader so user NEVER sees the old/demo profile during boot!
+    if (isOAuthReturn) {
+      // User authenticated with Google and returned; show cycling loader while loading their profile
       showProfileLoadingOverlay({
-        status: isOAuthReturn ? "Finalizing Google Sign-In..." : "Restoring your account..."
+        status: "Finalizing Google Sign-In..."
       });
     }
 
@@ -2196,7 +2195,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
       try {
         if (authMode === "signin") {
-          showProfileLoadingOverlay({ status: "Signing in to your account..." });
           const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
           if (error) throw error;
           if (data && data.session) {
@@ -2228,7 +2226,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // Google OAuth Sign-In (System Browser on Native Android, standard redirect on Web)
   if (googleSignInBtn) {
     googleSignInBtn.addEventListener("click", async () => {
-      showProfileLoadingOverlay({ status: "Connecting with Google..." });
+      clearAuthError();
 
       if (!supabaseClient) {
         try {
@@ -2238,7 +2236,6 @@ document.addEventListener("DOMContentLoaded", () => {
           }
         } catch (e) {}
         if (!supabaseClient) {
-          dismissProfileLoadingOverlay();
           showAuthError("Cloud service could not be contacted. Please verify internet connection.");
           return;
         }
@@ -2276,7 +2273,6 @@ document.addEventListener("DOMContentLoaded", () => {
           if (error) throw error;
         }
       } catch (err) {
-        dismissProfileLoadingOverlay();
         showAuthError(err.message || "Google sign-in failed.");
       }
     });
