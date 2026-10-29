@@ -170,6 +170,8 @@ class SmartCache:
         conn.close()
 
     def lookup(self, food_name: str, quantity: float = 1.0, unit: Optional[str] = None) -> Optional[Dict[str, Any]]:
+        # Guard against negative quantities
+        quantity = max(0.0, float(quantity))
         key = normalize_key(food_name)
         conn = None
         try:

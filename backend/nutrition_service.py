@@ -155,6 +155,8 @@ class NutritionService:
         3. If CalorieNinjas fails/misses, fallback to heuristic catalog.
         4. Save resolved nutrition to Smart Cache for instant future lookups.
         """
+        # Guard against negative quantities
+        quantity = max(0.0, float(quantity))
         # Step 1: Check smart_cache
         cached = smart_cache.lookup(food_name, quantity, unit)
         if cached:
