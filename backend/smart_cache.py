@@ -171,6 +171,7 @@ class SmartCache:
 
     def lookup(self, food_name: str, quantity: float = 1.0, unit: Optional[str] = None) -> Optional[Dict[str, Any]]:
         key = normalize_key(food_name)
+        conn = None
         try:
             conn = self.get_connection()
             cursor = conn.cursor()
@@ -206,7 +207,6 @@ class SmartCache:
                 row_dict = dict(row)
                 cursor.execute(f"UPDATE food_cache SET hit_count = hit_count + 1 WHERE id = {param_placeholder}", (row_dict["id"],))
                 conn.commit()
-                conn.close()
 
                 base_qty = row_dict["serving_qty"] or 1.0
                 scale = quantity / base_qty if base_qty > 0 else quantity
@@ -265,14 +265,20 @@ class SmartCache:
                     "hits": row_dict["hit_count"] + 1
                 }
 
-            conn.close()
             return None
         except Exception as e:
             logger.error("Error during food_cache lookup: %s", e)
             return None
+        finally:
+            if conn:
+                try:
+                    conn.close()
+                except Exception:
+                    pass
 
     def save(self, name: str, quantity: float, unit: str, calories: int, protein: float, carbs: float, fats: float, tags: str = ""):
         key = normalize_key(name)
+        conn = None
         try:
             conn = self.get_connection()
             cursor = conn.cursor()
@@ -321,9 +327,14 @@ class SmartCache:
                     tags
                 ))
             conn.commit()
-            conn.close()
         except Exception as e:
             logger.error("Error saving to food_cache: %s", e)
+        finally:
+            if conn:
+                try:
+                    conn.close()
+                except Exception:
+                    pass
 
 # Singleton cache instance
 smart_cache = SmartCache()
