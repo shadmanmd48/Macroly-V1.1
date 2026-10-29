@@ -111,7 +111,8 @@ class NutritionService:
         """Heuristic and sensible baseline fallback catalog."""
         cleaned = food_name.lower().strip()
         matched_cat = None
-        for cat in FOOD_CATEGORY_HEURISTICS:
+        # Sort by length descending so specific compounds (e.g. 'corn pizza') match before generic words ('pizza')
+        for cat in sorted(FOOD_CATEGORY_HEURISTICS.keys(), key=len, reverse=True):
             if cat in cleaned:
                 matched_cat = cat
                 break
