@@ -5,10 +5,10 @@ class FoodItem(BaseModel):
     name: str
     quantity: float = Field(default=1.0, ge=0.0, le=100000.0)
     unit: str = "serving"
-    calories: int = Field(default=0, ge=0, le=500000)
-    protein: float = Field(default=0.0, ge=0.0, le=50000.0)
-    carbs: float = Field(default=0.0, ge=0.0, le=50000.0)
-    fats: float = Field(default=0.0, ge=0.0, le=50000.0)
+    calories: int = Field(default=0, ge=0, le=2000000000)
+    protein: float = Field(default=0.0, ge=0.0, le=1000000.0)
+    carbs: float = Field(default=0.0, ge=0.0, le=1000000.0)
+    fats: float = Field(default=0.0, ge=0.0, le=1000000.0)
 
 class MealLog(BaseModel):
     id: str

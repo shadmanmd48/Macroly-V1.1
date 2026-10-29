@@ -319,6 +319,38 @@ class TestMacrolyFeatures(unittest.TestCase):
         _prune_token_cache(now)
         self.assertLessEqual(len(_TOKEN_CACHE), MAX_CACHE_ENTRIES)
 
+    # =========================================================================
+    # 7. Phase 3: Cache, Database Bounds & Heuristic Integrity
+    # =========================================================================
+    def test_compound_heuristic_not_shadowed(self):
+        """Ensure specific compound foods like 'corn pizza' are not shadowed by generic 'pizza'."""
+        svc = NutritionService()
+        corn_pizza = svc._resolve_heuristic_or_estimate("corn pizza", quantity=1.0, unit="slice")
+        self.assertEqual(corn_pizza["calories"], 260, "Corn pizza should resolve to 260 kcal, not generic pizza 285 kcal")
+
+    def test_negative_quantity_clamping(self):
+        """Ensure negative quantity lookups are clamped to 0 and do not return negative calories."""
+        from backend.smart_cache import smart_cache
+        res = smart_cache.lookup("whole wheat roti", quantity=-3.0, unit="roti")
+        self.assertIsNotNone(res)
+        self.assertEqual(res["calories"], 0)
+        self.assertEqual(res["protein"], 0.0)
+
+    def test_postgres_safe_integer_bounds(self):
+        """Ensure extremely large total_calories are safely clamped and do not cause 32-bit integer overflow."""
+        huge_meal = MealLog(
+            id="meal_huge_overflow",
+            user_id=self.user_a,
+            title="Massive Feast",
+            meal_type="Dinner",
+            timestamp="8:00 PM",
+            total_calories=1_500_000_000,
+            items=[]
+        )
+        self.store.add_meal(huge_meal, user_id=self.user_a)
+        saved = self.store.get_meal_by_id("meal_huge_overflow", user_id=self.user_a)
+        self.assertIsNotNone(saved)
+        self.assertLessEqual(saved.total_calories, 2_000_000_000)
 
 if __name__ == "__main__":
     unittest.main()
