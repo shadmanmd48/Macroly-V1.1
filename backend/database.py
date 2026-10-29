@@ -844,6 +844,11 @@ class DataStore:
         placeholder = "%s" if self.use_postgres else "?"
         items_json = json.dumps([it.model_dump() if hasattr(it, "model_dump") else it.dict() for it in meal.items]) if meal.items else None
         date_str = meal.date_str or get_ist_today_str()
+        safe_cal = max(0, min(int(meal.total_calories), 2_000_000_000))
+        safe_p = max(0.0, min(float(meal.protein), 1_000_000.0))
+        safe_c = max(0.0, min(float(meal.carbs), 1_000_000.0))
+        safe_f = max(0.0, min(float(meal.fats), 1_000_000.0))
+        conn = None
         try:
             conn = self.get_connection()
             cursor = conn.cursor()
@@ -864,7 +869,7 @@ class DataStore:
                 """
                 cursor.execute(sql, (
                     meal.id, user_id, meal.title, 1.0, "serving",
-                    meal.total_calories, meal.protein, meal.carbs, meal.fats,
+                    safe_cal, safe_p, safe_c, safe_f,
                     meal.meal_type, meal.timestamp, date_str, items_json
                 ))
             else:
@@ -874,16 +879,21 @@ class DataStore:
                 """
                 cursor.execute(sql, (
                     meal.id, user_id, meal.title, 1.0, "serving",
-                    meal.total_calories, meal.protein, meal.carbs, meal.fats,
+                    safe_cal, safe_p, safe_c, safe_f,
                     meal.meal_type, meal.timestamp, date_str, items_json
                 ))
             conn.commit()
-            conn.close()
             # Also ensure user's last_active_date is updated to today
             self._set_user_last_active_date(user_id, date_str)
             logger.info("Persisted meal '%s' (%s, date: %s) for user %s", meal.title, meal.id, date_str, user_id)
         except Exception as e:
             logger.error("Error saving meal to meal_logs: %s", e)
+        finally:
+            if conn:
+                try:
+                    conn.close()
+                except Exception:
+                    pass
 
     def update_meal(self, meal_id: str, updated_data: Dict[str, Any], user_id: Optional[str] = None) -> Optional[MealLog]:
         """Update meal verifying user ownership."""
@@ -912,8 +922,14 @@ class DataStore:
             current_meal.carbs = round(sum(it.carbs for it in current_meal.items), 1)
             current_meal.fats = round(sum(it.fats for it in current_meal.items), 1)
 
+        safe_cal = max(0, min(int(current_meal.total_calories), 2_000_000_000))
+        safe_p = max(0.0, min(float(current_meal.protein), 1_000_000.0))
+        safe_c = max(0.0, min(float(current_meal.carbs), 1_000_000.0))
+        safe_f = max(0.0, min(float(current_meal.fats), 1_000_000.0))
+
         items_json = json.dumps([it.model_dump() if hasattr(it, "model_dump") else it.dict() for it in current_meal.items]) if current_meal.items else None
         placeholder = "%s" if self.use_postgres else "?"
+        conn = None
 
         try:
             conn = self.get_connection()
@@ -933,10 +949,10 @@ class DataStore:
                 """
                 cursor.execute(sql, (
                     current_meal.title,
-                    current_meal.total_calories,
-                    current_meal.protein,
-                    current_meal.carbs,
-                    current_meal.fats,
+                    safe_cal,
+                    safe_p,
+                    safe_c,
+                    safe_f,
                     current_meal.meal_type,
                     current_meal.timestamp,
                     items_json,
@@ -958,21 +974,26 @@ class DataStore:
                 """
                 cursor.execute(sql, (
                     current_meal.title,
-                    current_meal.total_calories,
-                    current_meal.protein,
-                    current_meal.carbs,
-                    current_meal.fats,
+                    safe_cal,
+                    safe_p,
+                    safe_c,
+                    safe_f,
                     current_meal.meal_type,
                     current_meal.timestamp,
                     items_json,
                     meal_id
                 ))
             conn.commit()
-            conn.close()
             logger.info("Updated meal %s", meal_id)
             return current_meal
         except Exception as e:
             logger.error("Error updating meal %s: %s", meal_id, e)
+        finally:
+            if conn:
+                try:
+                    conn.close()
+                except Exception:
+                    pass
             return None
 
     def delete_meal(self, meal_id: str, user_id: Optional[str] = None) -> bool:

@@ -3,12 +3,12 @@ from pydantic import BaseModel, Field
 
 class FoodItem(BaseModel):
     name: str
-    quantity: float = 1.0
+    quantity: float = Field(default=1.0, ge=0.0, le=100000.0)
     unit: str = "serving"
-    calories: int = 0
-    protein: float = 0.0
-    carbs: float = 0.0
-    fats: float = 0.0
+    calories: int = Field(default=0, ge=0, le=500000)
+    protein: float = Field(default=0.0, ge=0.0, le=50000.0)
+    carbs: float = Field(default=0.0, ge=0.0, le=50000.0)
+    fats: float = Field(default=0.0, ge=0.0, le=50000.0)
 
 class MealLog(BaseModel):
     id: str
@@ -18,10 +18,10 @@ class MealLog(BaseModel):
     timestamp: str
     date_str: Optional[str] = None
     items: List[FoodItem] = []
-    total_calories: int = 0
-    protein: float = 0.0
-    carbs: float = 0.0
-    fats: float = 0.0
+    total_calories: int = Field(default=0, ge=0, le=2000000000)
+    protein: float = Field(default=0.0, ge=0.0, le=1000000.0)
+    carbs: float = Field(default=0.0, ge=0.0, le=1000000.0)
+    fats: float = Field(default=0.0, ge=0.0, le=1000000.0)
     subtitle: Optional[str] = ""
     image_url: Optional[str] = None
     recalculated: bool = False
