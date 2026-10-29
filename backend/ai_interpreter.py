@@ -16,7 +16,7 @@ logger = logging.getLogger("macroly.ai_interpreter")
 NUMBER_WORDS = {
     "a": 1, "an": 1, "one": 1, "two": 2, "three": 3, "four": 4, "five": 5,
     "six": 6, "seven": 7, "eight": 8, "nine": 9, "ten": 10,
-    "half": 0.5, "couple": 2, "few": 3
+    "half": 0.5, "quarter": 0.25, "couple": 2, "few": 3
 }
 
 UNIT_WORDS = [
@@ -36,6 +36,7 @@ CONVERSATIONAL_NOISE = [
 INTENT_FOOD_LOG = "food_log"
 INTENT_CORRECTION = "correction"
 INTENT_WORKOUT_LOG = "workout_log"
+INTENT_WATER_LOG = "water_log"
 INTENT_DELETION = "deletion"
 INTENT_NOT_FOOD_RELATED = "not_food_related"
 
@@ -132,6 +133,14 @@ class AIInterpreter:
             # Ensure it's not a food item that happens to contain workout keywords
             if not any(fw in text_lower for fw in ["egg", "bakery", "bread", "milk", "coffee", "roti", "curry"]):
                 return INTENT_WORKOUT_LOG
+
+        # 3b. Obvious Hydration / Water Log Heuristic (e.g. "drank 500ml of water", "had 2 glasses of water")
+        if re.search(r'\b(?:water|hydration)\b', text_lower):
+            if not any(fw in text_lower for fw in ["watermelon", "water chestnut", "water spinach", "watercress"]):
+                if any(verb in text_lower for verb in ["drank", "drink", "drinking", "had", "have", "logged", "log", "glass", "glasses", "bottle", "bottles", "ml", "liters", "litres", "liter", "litre", "sip", "sipped"]):
+                    other_food = any(fw in text_lower for fw in EDIBLE_FOOD_KEYWORDS if fw not in ["water"])
+                    if not other_food:
+                        return INTENT_WATER_LOG
 
         # 4. Obvious Not-Food-Related Heuristics (greetings, small talk, gratitude, goal questions, general chatter)
         if self._is_not_food_related(text_clean):
@@ -243,6 +252,8 @@ class AIInterpreter:
             return self._handle_correction(user_text, current_meals)
         elif intent == INTENT_WORKOUT_LOG:
             return self._handle_workout(user_text)
+        elif intent == INTENT_WATER_LOG:
+            return self._handle_water(user_text)
         else:  # INTENT_FOOD_LOG
             return self._handle_food_log(user_text, context)
 
@@ -445,11 +456,62 @@ class AIInterpreter:
             }
 
         clean_text = re.sub(r'[\!\.\?]', '', text_lower)
-        qty_change_match = re.search(r'(?:make\s+that|make\s+it|change\s+to|actually|have)\s+(\d+|[a-z]+)\s+(.+)', clean_text)
+
+        # 1. Check replacement: e.g. "2 rotis instead of rice", "replace rice with 2 rotis"
+        replace_match = re.search(r'(?:replace\s+([a-zA-Z\s]+)\s+with\s+(.+)|(.+)\s+instead\s+of\s+([a-zA-Z\s]+))', clean_text)
+        if replace_match:
+            if replace_match.group(1) and replace_match.group(2):
+                old_term = replace_match.group(1).strip()
+                new_term = replace_match.group(2).strip()
+            else:
+                new_term = replace_match.group(3).strip()
+                new_term = re.sub(r'^(?:actually|make\s+it|change\s+to|i\s+had|had|i\s+ate|ate)\s+', '', new_term).strip()
+                old_term = replace_match.group(4).strip()
+
+            target_idx = -1
+            for idx, it in enumerate(last_meal.items):
+                if old_term in it.name.lower() or it.name.lower() in old_term:
+                    target_idx = idx
+                    break
+
+            if target_idx >= 0:
+                old_item = last_meal.items[target_idx]
+                parsed_new = self._parse_single_item(new_term)
+                if parsed_new:
+                    last_meal.items[target_idx] = parsed_new
+                    old_tot = last_meal.total_calories
+                    last_meal.total_calories = sum(i.calories for i in last_meal.items)
+                    last_meal.protein = round(sum(i.protein for i in last_meal.items), 1)
+                    last_meal.carbs = round(sum(i.carbs for i in last_meal.items), 1)
+                    last_meal.fats = round(sum(i.fats for i in last_meal.items), 1)
+                    delta = last_meal.total_calories - old_tot
+                    last_meal.recalculated = True
+                    last_meal.recalc_delta_kcal = delta
+
+                    qty_label = int(parsed_new.quantity) if parsed_new.quantity.is_integer() else parsed_new.quantity
+                    note = f"Updated {last_meal.meal_type.lower()}! Replaced {old_item.name} with {qty_label}x {parsed_new.name}."
+                    logger.info("🔄 [CORRECTION: Replacement] Replaced %s with %s in %s", old_item.name, parsed_new.name, last_meal.id)
+                    return {
+                        "intent": INTENT_CORRECTION,
+                        "type": "correction",
+                        "meal": last_meal,
+                        "reply_text": note,
+                        "note": note,
+                        "delta_kcal": delta
+                    }
+
+        # 2. Standard quantity modification (e.g. "make it 3 rotis", "actually 2 rotis")
+        clean_text_qty = re.sub(r'\bactually\s+(?:i\s+)?(?:had|ate|have|eating)\b', 'actually', clean_text)
+        qty_change_match = re.search(r'(?:make\s+that|make\s+it|change\s+to|actually|have)\s+(\d+(?:\.\d+)?|[a-z]+)\s+(.+)', clean_text_qty)
         if qty_change_match:
             qty_raw = qty_change_match.group(1).strip()
             item_raw = qty_change_match.group(2).strip()
             item_raw = re.sub(r'\b(actually|instead|please|thanks)\b', '', item_raw).strip()
+            if qty_raw in ["i", "we", "just"] and item_raw:
+                parts = item_raw.split(None, 1)
+                if parts and (parts[0].isdigit() or parts[0] in NUMBER_WORDS):
+                    qty_raw = parts[0]
+                    item_raw = parts[1] if len(parts) > 1 else ""
             new_qty = self._parse_qty_token(qty_raw)
             if new_qty is not None and item_raw:
                 for item in last_meal.items:
@@ -529,7 +591,16 @@ class AIInterpreter:
             activity = "Strength Training"
             rate_per_min = 7.5
 
-        burned = int(round(rate_per_min * duration))
+        # Check if user explicitly specified calories burned
+        burned_match = re.search(r'(?:burned|burn|burnt|-)\s*(\d+)\s*(?:kcal|calories|cals|cal)?\b', text_lower)
+        if not burned_match:
+            burned_match = re.search(r'(\d+)\s*(?:kcal|calories|cals)\b', text_lower)
+
+        if burned_match:
+            burned = int(burned_match.group(1))
+        else:
+            burned = int(round(rate_per_min * duration))
+
         logger.info("🏃 [WORKOUT: Rule-Based] Logged %s for %d mins (-%d kcal)", activity, duration, burned)
         return {
             "intent": INTENT_WORKOUT_LOG,
@@ -538,6 +609,47 @@ class AIInterpreter:
             "duration_mins": duration,
             "calories_burned": burned,
             "reply_text": f"Awesome job! Logged {duration} mins of {activity} (-{burned} kcal). Your daily burn target has been updated!"
+        }
+
+    def _handle_water(self, text: str) -> Dict[str, Any]:
+        """Handles drinking water / hydration logging."""
+        text_lower = text.lower().strip()
+        liters = 0.25
+
+        # Check for explicit ml (e.g. 500ml, 750 ml)
+        ml_match = re.search(r'(\d+(?:\.\d+)?)\s*ml\b', text_lower)
+        if ml_match:
+            ml_val = float(ml_match.group(1))
+            liters = round(ml_val / 1000.0, 2)
+        else:
+            # Check for explicit liters (e.g. 1.5 liters, 1L, 2 l)
+            l_match = re.search(r'(\d+(?:\.\d+)?)\s*(?:l|liters?|litres?)\b', text_lower)
+            if l_match:
+                liters = round(float(l_match.group(1)), 2)
+            else:
+                glass_match = re.search(r'(\d+|one|two|three|four|five|a|an)\s*glasses?\b', text_lower)
+                if glass_match:
+                    count_str = glass_match.group(1).lower()
+                    count = NUMBER_WORDS.get(count_str, 1)
+                    if count_str.isdigit():
+                        count = float(count_str)
+                    liters = round(count * 0.25, 2)
+                else:
+                    bottle_match = re.search(r'(\d+|one|two|a|an)\s*bottles?\b', text_lower)
+                    if bottle_match:
+                        count_str = bottle_match.group(1).lower()
+                        count = NUMBER_WORDS.get(count_str, 1)
+                        if count_str.isdigit():
+                            count = float(count_str)
+                        liters = round(count * 0.75, 2)
+
+        liters = max(0.05, min(10.0, liters))
+        logger.info("💧 [WATER: Hydration Log] Logged %.2fL of water", liters)
+        return {
+            "intent": INTENT_WATER_LOG,
+            "type": "water_log",
+            "liters": liters,
+            "reply_text": f"Logged {liters}L of water! 💧 Great job staying hydrated today."
         }
 
     def _infer_meal_type(self, text: str) -> str:
@@ -636,7 +748,7 @@ class AIInterpreter:
             )
 
             # Primary model available on Groq with fallbacks
-            candidate_models = ["qwen/qwen3.8-27b", "openai/gpt-oss-120b", "openai/gpt-oss-20b"]
+            candidate_models = ["llama-3.3-70b-versatile", "llama-3.1-8b-instant", "mixtral-8x7b-32768"]
             completion = None
             for model_name in candidate_models:
                 try:
@@ -877,9 +989,15 @@ class AIInterpreter:
                     lead_qty = None
                     food_tokens = tokens[:]
 
-                    # Check leading count (e.g. "2", "2x", "a", "one")
+                    # Check leading count (e.g. "2", "2x", "1/2", "3/4", "a", "one")
+                    m_frac = re.match(r'^(\d+)\s*/\s*(\d+)$', tokens[0])
                     m_qty = re.match(r'^(\d+(?:\.\d+)?)(?:x)?$', tokens[0])
-                    if m_qty:
+                    if m_frac:
+                        num = float(m_frac.group(1))
+                        denom = float(m_frac.group(2))
+                        lead_qty = round(num / denom, 2) if denom > 0 else 1.0
+                        food_tokens = tokens[1:]
+                    elif m_qty:
                         lead_qty = float(m_qty.group(1))
                         food_tokens = tokens[1:]
                     elif tokens[0].lower() in NUMBER_WORDS:
@@ -891,11 +1009,15 @@ class AIInterpreter:
                     else:
                         qty = 1.0
 
+                    # Strip filler articles after quantity (e.g. "half an avocado", "1/2 of avocado")
+                    if food_tokens and food_tokens[0].lower() in ["a", "an", "of"]:
+                        food_tokens = food_tokens[1:]
+
                     # Check unit (e.g. "bowl", "slice", "glass", "cup", "rotis", "pieces")
                     if food_tokens and food_tokens[0].lower() in UNIT_WORDS:
                         unit = food_tokens[0].lower()
                         food_tokens = food_tokens[1:]
-                        if food_tokens and food_tokens[0].lower() == "of":
+                        if food_tokens and food_tokens[0].lower() in ["of", "a", "an"]:
                             food_tokens = food_tokens[1:]
 
                     food_name = " ".join(food_tokens).strip()

@@ -229,6 +229,9 @@ def chat_endpoint(req: ChatRequest, user: UserProfile = Depends(get_current_user
         meal_prompt = result.get("meal_prompt")
     elif res_type in ["workout", "workout_log"]:
         data_store.log_workout(user.id, result["duration_mins"], result["calories_burned"])
+    elif res_type in ["water", "water_log", "hydration"]:
+        liters = result.get("liters", 0.25)
+        data_store.add_hydration(user.id, liters)
     elif res_type == "not_food_related":
         meal_data = None
 
