@@ -18,13 +18,17 @@ android {
     }
     def keystorePropertiesFile = rootProject.file("keystore.properties")
     def keystoreProperties = new Properties()
+    def hasValidKeystore = false
     if (keystorePropertiesFile.exists()) {
         keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+        if (keystoreProperties['storeFile'] && file(keystoreProperties['storeFile']).exists()) {
+            hasValidKeystore = true
+        }
     }
 
     signingConfigs {
         release {
-            if (keystorePropertiesFile.exists()) {
+            if (hasValidKeystore) {
                 storeFile file(keystoreProperties['storeFile'])
                 storePassword keystoreProperties['storePassword']
                 keyAlias keystoreProperties['keyAlias']
@@ -35,7 +39,9 @@ android {
 
     buildTypes {
         release {
-            signingConfig signingConfigs.release
+            if (hasValidKeystore) {
+                signingConfig signingConfigs.release
+            }
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
