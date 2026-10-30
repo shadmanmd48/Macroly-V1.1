@@ -1,0 +1,385 @@
+/* =============================================================================
+   MACROLY RESPONSIVE ARCHITECTURE
+   Breakpoints: Desktop (>1024px), Tablet (768px - 1024px), Mobile (<768px)
+   ============================================================================= */
+
+/* -----------------------------------------------------------------------------
+   Hero Layout (Desktop Grid)
+   ----------------------------------------------------------------------------- */
+.hero-grid {
+  display: grid;
+  grid-template-columns: 1.05fr 1fr;
+  align-items: center;
+  gap: 40px;
+  min-height: calc(100vh - var(--header-height));
+  padding-top: 30px;
+}
+
+.hero-content {
+  position: relative;
+  z-index: 10;
+}
+
+.hero-tag {
+  margin-bottom: 24px;
+}
+
+.hero-headline {
+  font-family: var(--font-display);
+  font-size: clamp(2.8rem, 4.8vw, 4.6rem);
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.035em;
+  color: var(--color-pure-white);
+  margin-bottom: 24px;
+}
+
+.hero-description {
+  font-size: clamp(1.05rem, 1.35vw, 1.25rem);
+  line-height: 1.65;
+  color: var(--text-secondary-dark);
+  max-width: 540px;
+  margin-bottom: 36px;
+}
+
+.hero-cta-group {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.hero-subline {
+  font-size: 0.88rem;
+  color: var(--text-muted-dark);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.hero-subline-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-lime);
+}
+
+/* -----------------------------------------------------------------------------
+   Feature Grid (Section 6)
+   ----------------------------------------------------------------------------- */
+.features-bento-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  margin-top: 50px;
+}
+
+.feature-bento-card {
+  background: var(--color-dark-emerald);
+  border: 1px solid rgba(197, 244, 103, 0.16);
+  border-radius: var(--radius-lg);
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+  transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.feature-bento-card:hover {
+  transform: translateY(-5px);
+  border-color: rgba(197, 244, 103, 0.4);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.35);
+}
+
+.feature-bento-card.card-span-2 {
+  grid-column: span 2;
+}
+
+.feature-card-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  background: rgba(197, 244, 103, 0.12);
+  border: 1px solid rgba(197, 244, 103, 0.25);
+  color: var(--color-lime);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+  margin-bottom: 22px;
+}
+
+.feature-card-title {
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #FFFFFF;
+  margin-bottom: 12px;
+}
+
+.feature-card-desc {
+  font-size: 0.95rem;
+  color: var(--text-secondary-dark);
+  line-height: 1.6;
+}
+
+/* Interactive mini elements inside feature cards */
+.feature-mini-preview {
+  margin-top: 20px;
+  padding: 14px;
+  background: rgba(7, 31, 22, 0.6);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  font-size: 0.82rem;
+}
+
+/* History Chart Preview (Section 5) */
+.history-showcase-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 40px;
+  align-items: center;
+  margin-top: 40px;
+}
+
+.streak-trend-box {
+  background: rgba(11, 43, 30, 0.6);
+  border: 1px solid rgba(197, 244, 103, 0.2);
+  border-radius: var(--radius-lg);
+  padding: 30px;
+  backdrop-filter: blur(12px);
+}
+
+.trend-bars-row {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  height: 140px;
+  padding-top: 20px;
+  margin-top: 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.trend-bar-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+}
+
+.trend-bar-fill {
+  width: 24px;
+  border-radius: 6px 6px 0 0;
+  background: linear-gradient(180deg, var(--color-lime), var(--color-emerald));
+  transition: height 1s ease;
+}
+
+.trend-day-label {
+  font-size: 0.72rem;
+  color: var(--text-muted-dark);
+  font-weight: 600;
+}
+
+/* Section 7 Final CTA */
+.final-cta-box {
+  background: radial-gradient(circle at center, #0e3828 0%, #071F16 75%);
+  border: 1px solid rgba(197, 244, 103, 0.25);
+  border-radius: var(--radius-xl);
+  padding: 80px 60px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6);
+}
+
+.final-cta-content {
+  max-width: 650px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 5;
+}
+
+.final-cta-title {
+  font-family: var(--font-display);
+  font-size: clamp(2.5rem, 4.2vw, 3.8rem);
+  font-weight: 800;
+  line-height: 1.15;
+  color: #FFFFFF;
+  margin-bottom: 18px;
+}
+
+.final-cta-desc {
+  font-size: 1.15rem;
+  color: var(--text-secondary-dark);
+  line-height: 1.6;
+  margin-bottom: 36px;
+}
+
+/* -----------------------------------------------------------------------------
+   TABLET RESPONSIVENESS (max-width: 1024px)
+   ----------------------------------------------------------------------------- */
+@media (max-width: 1024px) {
+  :root {
+    --header-height: 72px;
+  }
+
+  .hero-grid {
+    grid-template-columns: 1fr;
+    text-align: center;
+    gap: 50px;
+    padding-top: 40px;
+  }
+
+  .hero-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .hero-description {
+    max-width: 600px;
+  }
+
+  .hero-cta-group {
+    justify-content: center;
+  }
+
+  .hero-subline {
+    justify-content: center;
+  }
+
+  .hero-phone-stage {
+    height: 540px;
+  }
+
+  .phone-hero-slot-4 {
+    display: none; /* Hide 4th phone on tablet */
+  }
+
+  .phone-hero-slot-1 {
+    transform: translate3d(0, 0, 40px) scale(0.92);
+  }
+
+  .phone-hero-slot-2 {
+    transform: translate3d(-130px, 15px, -30px) rotateY(12deg) scale(0.82);
+  }
+
+  .phone-hero-slot-3 {
+    transform: translate3d(140px, 20px, -60px) rotateY(-14deg) scale(0.78);
+  }
+
+  .split-showcase-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .history-showcase-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .features-bento-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .feature-bento-card.card-span-2 {
+    grid-column: span 1;
+  }
+
+  .footer-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 36px;
+  }
+}
+
+/* -----------------------------------------------------------------------------
+   MOBILE RESPONSIVENESS (max-width: 768px)
+   ----------------------------------------------------------------------------- */
+@media (max-width: 768px) {
+  :root {
+    --container-padding: 18px;
+    --header-height: 64px;
+  }
+
+  .landing-section {
+    padding: 80px 0;
+  }
+
+  .nav-links {
+    position: fixed;
+    top: var(--header-height);
+    left: 0;
+    right: 0;
+    background: rgba(7, 31, 22, 0.98);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    flex-direction: column;
+    padding: 24px;
+    gap: 20px;
+    border-bottom: 1px solid rgba(197, 244, 103, 0.15);
+    transform: translateY(-150%);
+    opacity: 0;
+    pointer-events: none;
+    transition: all 0.35s ease;
+  }
+
+  .nav-links.open {
+    transform: translateY(0);
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .mobile-menu-toggle {
+    display: flex;
+  }
+
+  .nav-actions {
+    display: none;
+  }
+
+  .hero-phone-stage {
+    height: 520px;
+  }
+
+  .phone-hero-slot-2,
+  .phone-hero-slot-3,
+  .phone-hero-slot-4 {
+    display: none; /* Show only main focal phone on mobile for clean performance */
+  }
+
+  .phone-hero-slot-1 {
+    position: relative;
+    transform: none !important;
+    margin: 0 auto;
+    width: 290px;
+    height: 560px;
+  }
+
+  .floating-glass-card {
+    display: none; /* Remove overlapping floating cards on small screens */
+  }
+
+  .showcase-stage-single .phone-mockup {
+    width: 290px;
+    height: 580px;
+  }
+
+  .features-bento-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .final-cta-box {
+    padding: 50px 24px;
+  }
+
+  .footer-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .footer-bottom {
+    flex-direction: column;
+    gap: 16px;
+    text-align: center;
+  }
+}
