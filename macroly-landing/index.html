@@ -1,0 +1,956 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Macroly — Nutrition Tracking, Reimagined with AI</title>
+  <meta name="description" content="Effortless AI-powered, chat-based nutrition and macronutrient tracking. Stop searching food databases—just talk to Macroly.">
+  <link rel="icon" type="image/png" href="/landing-assets/assets/images/logo.png">
+
+  <!-- Google Fonts: Plus Jakarta Sans & Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Core Stylesheets -->
+  <link rel="stylesheet" href="/landing-assets/css/style.css">
+  <link rel="stylesheet" href="/landing-assets/css/components.css">
+  <link rel="stylesheet" href="/landing-assets/css/responsive.css">
+
+  <!-- GSAP 3 & ScrollTrigger CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+</head>
+<body>
+
+  <!-- Global SVG Gradients for Progress Rings -->
+  <svg width="0" height="0" style="position: absolute;">
+    <defs>
+      <linearGradient id="emeraldGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#C5F467" />
+        <stop offset="60%" stop-color="#34D399" />
+        <stop offset="100%" stop-color="#145638" />
+      </linearGradient>
+      <linearGradient id="proteinGradDirect" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#C5F467" />
+        <stop offset="100%" stop-color="#22C55E" />
+      </linearGradient>
+      <linearGradient id="carbsGradDirect" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#7DD3FC" />
+        <stop offset="100%" stop-color="#38BDF8" />
+      </linearGradient>
+      <linearGradient id="fatsGradDirect" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#FDE68A" />
+        <stop offset="100%" stop-color="#F59E0B" />
+      </linearGradient>
+    </defs>
+  </svg>
+
+  <!-- =========================================================================
+       NAVIGATION BAR
+       ========================================================================= -->
+  <header class="site-navbar" id="mainNavbar">
+    <div class="container nav-container">
+      <a href="#hero" class="nav-brand">
+        <div class="brand-icon-box">
+          <svg width="28" height="28" viewBox="0 0 40 40" fill="none">
+            <rect width="40" height="40" rx="11" fill="#14241B" stroke="rgba(74, 222, 128, 0.35)" stroke-width="1.2" />
+            <path d="M8 29 V19 C8 15 11 12.5 14.5 12.5 C18 12.5 20 15 20 19 V29 M20 19 C20 15 23 12.5 26.5 12.5 C30 12.5 32 15 32 19 V29"
+                  stroke="#4ADE80" stroke-width="4.2" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+        </div>
+        <span class="brand-text">Macroly<span class="brand-badge">AI</span></span>
+      </a>
+
+      <nav>
+        <ul class="nav-links" id="navLinks">
+          <li><a href="#hero" class="active">Home</a></li>
+          <li><a href="#how-it-works">How It Works</a></li>
+          <li><a href="#dashboard-section">Dashboard</a></li>
+          <li><a href="#corrections-section">Corrections</a></li>
+          <li><a href="#features-section">Features</a></li>
+        </ul>
+      </nav>
+
+      <div class="nav-actions">
+        <button class="btn btn-outline-white btn-try-web">Try Macroly Web</button>
+        <button class="btn btn-lime btn-download-apk">Download APK</button>
+      </div>
+
+      <button class="mobile-menu-toggle" id="mobileToggle" aria-label="Toggle Menu">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="3" y1="12" x2="21" y2="12"></line>
+          <line x1="3" y1="6" x2="21" y2="6"></line>
+          <line x1="3" y1="18" x2="21" y2="18"></line>
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <main>
+    <!-- =========================================================================
+         SECTION 1: CINEMATIC HERO (Reference 1 Style)
+         ========================================================================= -->
+    <section class="landing-section dark-section" id="hero">
+      <div class="ambient-glow glow-emerald-lg hero-ambient-glow" style="top: -100px; right: 5%;"></div>
+      <div class="ambient-glow glow-lime-sm hero-ambient-glow" style="bottom: 50px; left: 10%;"></div>
+
+      <div class="container hero-grid">
+        <!-- Hero Text Left -->
+        <div class="hero-content">
+          <h1 class="hero-headline">
+            Your nutrition.<br>
+            Just a <span class="text-lime">conversation</span> away.
+          </h1>
+
+          <p class="hero-description">
+            Track meals, understand your macros, and hit your nutrition goals through simple natural conversations with AI. No tedious database searches required.
+          </p>
+
+          <div class="hero-cta-group">
+            <button class="btn btn-lime btn-try-web">
+              Try Macroly Web
+              <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+                <polyline points="12 5 19 12 12 19"></polyline>
+              </svg>
+            </button>
+            <button class="btn btn-outline-white btn-download-apk">
+              Download Android App
+              <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7 10 12 15 17 10"></polyline>
+                <line x1="12" y1="15" x2="12" y2="3"></line>
+              </svg>
+            </button>
+          </div>
+
+          <div class="hero-subline">
+            <span class="hero-subline-dot"></span>
+            <span>Smarter food logging &bull; Real-time AI nutrition breakdown</span>
+          </div>
+        </div>
+
+        <!-- Hero 3D Multi-Smartphone Carousel Stage (Clean 3D Rolling Showcase) -->
+        <div class="hero-phone-stage" id="heroPhoneStage">
+          <!-- 3D CAROUSEL TRACK -->
+          <div class="hero-carousel-track" id="heroCarouselTrack">
+            <!-- PHONE 1 (Main Focal Device: AI Chat Interface) -->
+            <div class="phone-mockup phone-hero-item phone-hero-slot-1 phone-theme-dark" id="heroPhone1">
+              <div class="phone-notch-bar">
+                <div class="notch-speaker-slot"></div>
+                <div class="notch-camera-lens"></div>
+              </div>
+              <div class="phone-status-bar">
+                <span>9:41</span>
+                <div class="phone-status-icons">5G &bull; 98%</div>
+              </div>
+              <div class="phone-screen">
+                <div class="screen-app-header">
+                  <div class="app-brand-badge">
+                    <svg width="24" height="24" viewBox="0 0 40 40" fill="none">
+                      <rect width="40" height="40" rx="11" fill="#14241B" stroke="#4ADE80" stroke-width="1.2" />
+                      <path d="M8 29 V19 C8 15 11 12.5 14.5 12.5 C18 12.5 20 15 20 19 V29 M20 19 C20 15 23 12.5 26.5 12.5 C30 12.5 32 15 32 19 V29"
+                            stroke="#4ADE80" stroke-width="4.2" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                    <span>Macroly AI</span>
+                  </div>
+                  <div class="screen-app-avatar">
+                    <img src="/landing-assets/assets/images/avatar.jpg" alt="User">
+                  </div>
+                </div>
+
+                <!-- Chat Stream Demo -->
+                <div class="chat-stream-demo">
+                  <div class="chat-bubble chat-bubble-user">
+                    I had 2 boiled eggs, 200g rice and grilled chicken breast
+                    <div class="chat-time">12:30 PM</div>
+                  </div>
+
+                  <div class="chat-bubble chat-bubble-ai">
+                    Logged your lunch! Identified <strong>3 nutrient items</strong> totaling <strong>620 kcal</strong>.
+                    <div class="chat-time">12:30 PM</div>
+                  </div>
+
+                  <!-- Parsed Meal Breakdown Card Inside Chat -->
+                  <div class="parsed-meal-card">
+                    <div class="parsed-meal-header">
+                      <span class="meal-badge">🍗 Lunch Logged</span>
+                      <span style="font-size:0.75rem;font-weight:700;color:var(--color-lime);">620 kcal</span>
+                    </div>
+                    <div class="parsed-items-list">
+                      <div class="parsed-item-row">
+                        <span class="item-name-qty">2 Boiled Eggs</span>
+                        <span class="item-macros-brief">156 kcal &bull; 12g P</span>
+                      </div>
+                      <div class="parsed-item-row">
+                        <span class="item-name-qty">200g Cooked Rice</span>
+                        <span class="item-macros-brief">260 kcal &bull; 56g C</span>
+                      </div>
+                      <div class="parsed-item-row">
+                        <span class="item-name-qty">Grilled Chicken (150g)</span>
+                        <span class="item-macros-brief">204 kcal &bull; 41g P</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Phone Bottom Input Bar -->
+                <div class="phone-chat-input-bar">
+                  <span class="phone-input-placeholder">Describe your meal or snack...</span>
+                  <button class="phone-send-btn">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                      <line x1="12" y1="19" x2="12" y2="5"></line>
+                      <polyline points="5 12 12 5 19 12"></polyline>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- PHONE 2 (Second Device: Macro Dashboard View) -->
+            <div class="phone-mockup phone-hero-item phone-hero-slot-2 phone-theme-dark" id="heroPhone2">
+              <div class="phone-notch-bar">
+                <div class="notch-speaker-slot"></div>
+                <div class="notch-camera-lens"></div>
+              </div>
+              <div class="phone-status-bar">
+                <span>9:41</span>
+                <div class="phone-status-icons">5G &bull; 100%</div>
+              </div>
+              <div class="phone-screen">
+                <div class="screen-app-header">
+                  <div class="app-brand-badge">
+                    <span>Dashboard</span>
+                  </div>
+                  <div class="screen-app-avatar">
+                    <img src="/landing-assets/assets/images/avatar.jpg" alt="User">
+                  </div>
+                </div>
+
+                <!-- Gauge Card Inside Phone -->
+                <div class="phone-calorie-card">
+                  <svg class="phone-gauge-svg" viewBox="0 0 140 140">
+                    <circle class="gauge-circle-bg" cx="70" cy="70" r="54"></circle>
+                    <circle class="gauge-circle-bar" cx="70" cy="70" r="54" stroke-dashoffset="120"></circle>
+                  </svg>
+                  <div class="gauge-content-overlay">
+                    <span class="gauge-overlay-val">1,450</span>
+                    <span class="gauge-overlay-target">of 2,200 kcal</span>
+                  </div>
+                </div>
+
+                <!-- 3 Macro Pills -->
+                <div class="phone-macros-row">
+                  <div class="phone-macro-pill">
+                    <span class="macro-pill-title">Protein</span>
+                    <span class="macro-pill-num text-lime">110g</span>
+                  </div>
+                  <div class="phone-macro-pill">
+                    <span class="macro-pill-title">Carbs</span>
+                    <span class="macro-pill-num" style="color:#38BDF8;">165g</span>
+                  </div>
+                  <div class="phone-macro-pill">
+                    <span class="macro-pill-title">Fats</span>
+                    <span class="macro-pill-num" style="color:#F59E0B;">42g</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- PHONE 3 (Third Device: Meal History & Streaks) -->
+            <div class="phone-mockup phone-hero-item phone-hero-slot-3 phone-theme-dark" id="heroPhone3">
+              <div class="phone-notch-bar">
+                <div class="notch-speaker-slot"></div>
+                <div class="notch-camera-lens"></div>
+              </div>
+              <div class="phone-status-bar">
+                <span>9:41</span>
+                <div class="phone-status-icons">100%</div>
+              </div>
+              <div class="phone-screen">
+                <div class="screen-app-header">
+                  <div class="app-brand-badge">
+                    <span>Weekly Streak</span>
+                  </div>
+                </div>
+                <div class="phone-recent-meals-card">
+                  <span class="recent-meals-title">🔥 5-Day Streak Active</span>
+                  <p style="font-size:0.75rem;color:var(--text-secondary-dark);line-height:1.45;margin-bottom:8px;">
+                    Target met on 6 of 7 days. Consistency rating: 88%.
+                  </p>
+                  <div class="parsed-item-row" style="margin-top:6px;">
+                    <span class="item-name-qty">🥗 Dinner: Salmon Salad</span>
+                    <span class="item-macros-brief">480 kcal</span>
+                  </div>
+                  <div class="parsed-item-row" style="margin-top:4px;">
+                    <span class="item-name-qty">🥑 Breakfast: Avocado Toast</span>
+                    <span class="item-macros-brief">320 kcal</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- PHONE 4 (Fourth Device: Background Depth & Goals View) -->
+            <div class="phone-mockup phone-hero-item phone-hero-slot-4 phone-theme-dark" id="heroPhone4">
+              <div class="phone-notch-bar">
+                <div class="notch-speaker-slot"></div>
+                <div class="notch-camera-lens"></div>
+              </div>
+              <div class="phone-status-bar">
+                <span>9:41</span>
+                <div class="phone-status-icons">5G &bull; 90%</div>
+              </div>
+              <div class="phone-screen">
+                <div class="screen-app-header">
+                  <div class="app-brand-badge">
+                    <span>Target Goals</span>
+                  </div>
+                </div>
+                <div class="phone-calorie-card" style="padding:14px;margin-bottom:8px;">
+                  <span style="font-size:0.75rem;color:var(--color-lime);font-weight:700;">DAILY GOAL</span>
+                  <span style="font-family:var(--font-display);font-size:1.35rem;font-weight:800;margin:4px 0;">2,200 kcal</span>
+                  <span style="font-size:0.7rem;color:var(--text-muted-dark);">Muscle Hypertrophy Plan</span>
+                </div>
+                <div class="phone-recent-meals-card" style="padding:10px;">
+                  <span style="font-size:0.7rem;color:var(--color-mint);font-weight:700;">HYDRATION & ACTIVITY</span>
+                  <div style="font-size:0.75rem;color:#FFFFFF;margin-top:4px;">💧 2.5L Water Logged</div>
+                  <div style="font-size:0.75rem;color:#FFFFFF;margin-top:2px;">🏃 420 kcal Workout Burned</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =========================================================================
+         SECTION 2: CONVERSATIONAL FOOD LOGGING (Reference 2 Style Showcase)
+         ========================================================================= -->
+    <section class="landing-section light-section" id="how-it-works">
+      <div class="ambient-glow glow-mint-md" style="top: 20%; left: 5%;"></div>
+
+      <div class="container">
+        <div class="section-header" style="text-align: center; max-width: 680px; margin: 0 auto 50px;">
+          <div class="section-tag light">
+            <span>💬</span> INTELLIGENT MEAL LOGGING
+          </div>
+          <h2 class="section-title text-gradient-emerald">
+            Stop searching.<br>Start talking.
+          </h2>
+          <p class="section-desc" style="margin: 0 auto;">
+            Simply describe what you eat. Macroly understands portions, ingredients, and hidden calories automatically.
+          </p>
+        </div>
+
+        <div class="showcase-stage-single">
+          <!-- Floating UI Card Left -->
+          <div class="floating-glass-card light" style="top: 25%; left: 8%;">
+            <div class="card-icon-bubble card-icon-emerald">🥑</div>
+            <div class="card-text-group">
+              <span class="card-label">Identified Meal</span>
+              <span class="card-main-stat">Healthy Lunch</span>
+              <span class="card-subtext">3 Items Auto-Split</span>
+            </div>
+          </div>
+
+          <!-- Floating UI Card Right -->
+          <div class="floating-glass-card light" style="bottom: 25%; right: 8%; animation-delay: 2.5s;">
+            <div class="card-icon-bubble card-icon-lime">⚡</div>
+            <div class="card-text-group">
+              <span class="card-label">Speed</span>
+              <span class="card-main-stat">Under 2 Secs</span>
+              <span class="card-subtext">Zero Manual Database Entry</span>
+            </div>
+          </div>
+
+          <!-- Central Showcase Phone (Reference 2 Inspiration) -->
+          <div class="phone-mockup phone-theme-light">
+            <div class="phone-notch-bar">
+              <div class="notch-speaker-slot"></div>
+              <div class="notch-camera-lens"></div>
+            </div>
+            <div class="phone-status-bar">
+              <span>1:15 PM</span>
+              <div class="phone-status-icons">5G &bull; 92%</div>
+            </div>
+            <div class="phone-screen">
+              <div class="screen-app-header">
+                <div class="app-brand-badge">
+                  <span>AI Meal Logger</span>
+                </div>
+                <button class="btn btn-outline-emerald" id="replayDemoBtn" style="padding:4px 10px;font-size:0.72rem;">Replay</button>
+              </div>
+
+              <!-- Animated Chat Conversation Container -->
+              <div class="chat-stream-demo" id="demoChatStream">
+                <!-- User message and response will populate dynamically via chat-demo.js -->
+              </div>
+
+              <!-- Typing Indicator Template -->
+              <div class="chat-typing-dots" id="demoTypingIndicator" style="display: none;">
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+              </div>
+
+              <!-- Parsed Meal Card Template -->
+              <div class="parsed-meal-card" id="demoParsedCard" style="display: none;">
+                <div class="parsed-meal-header">
+                  <span class="meal-badge">🍛 Lunch Logged</span>
+                  <span class="parsed-cal-counter" style="font-size:0.8rem;font-weight:800;color:var(--color-emerald);">685 kcal</span>
+                </div>
+                <div class="parsed-items-list">
+                  <div class="parsed-item-row">
+                    <span class="item-name-qty">🥚 2 Boiled Eggs</span>
+                    <span class="item-macros-brief">156 kcal &bull; 12g P</span>
+                  </div>
+                  <div class="parsed-item-row">
+                    <span class="item-name-qty">🍚 200g Cooked Rice</span>
+                    <span class="item-macros-brief">260 kcal &bull; 56g C</span>
+                  </div>
+                  <div class="parsed-item-row">
+                    <span class="item-name-qty">🍗 Chicken Curry</span>
+                    <span class="item-macros-brief">269 kcal &bull; 27g P</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Replay Prompt Overlay Banner -->
+              <div id="demoReplayPrompt" style="display:none;margin-top:10px;padding:8px 12px;background:rgba(20,86,56,0.08);border-radius:10px;font-size:0.75rem;color:var(--color-emerald);align-items:center;justify-content:space-between;">
+                <span>✨ Try typing your own meal below!</span>
+              </div>
+
+              <!-- Phone Bottom Input Bar (Interactive) -->
+              <div class="phone-chat-input-bar">
+                <input type="text" id="demoChatInput" placeholder="Try typing: '1 glass mango smoothie'..." style="flex:1;background:transparent;border:none;outline:none;font-size:0.78rem;font-family:inherit;color:inherit;">
+                <button class="phone-send-btn" id="demoSendBtn" title="Send message">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                    <line x1="12" y1="19" x2="12" y2="5"></line>
+                    <polyline points="5 12 12 5 19 12"></polyline>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =========================================================================
+         SECTION 3: REAL-TIME MACRO DASHBOARD
+         ========================================================================= -->
+    <section class="landing-section dark-section" id="dashboard-section">
+      <div class="ambient-glow glow-emerald-lg" style="top: 15%; right: 10%;"></div>
+
+      <div class="container">
+        <div class="section-header" style="text-align: center; max-width: 680px; margin: 0 auto 50px;">
+          <div class="section-tag dark">
+            <span>📊</span> YOUR DAILY NUTRITION
+          </div>
+          <h2 class="section-title">
+            Every macro.<br><span class="text-lime">One clear picture.</span>
+          </h2>
+          <p class="section-desc" style="margin: 0 auto;">
+            Understand your daily intake with an intelligent dashboard that updates instantly as you chat with your AI assistant.
+          </p>
+        </div>
+
+        <div class="showcase-stage-single">
+          <!-- 4 Floating Macro Cards Around Center Phone -->
+          <div class="floating-glass-card" style="top: 20%; left: 6%;">
+            <div class="card-icon-bubble card-icon-emerald">🔥</div>
+            <div class="card-text-group">
+              <span class="card-label">Daily Calories</span>
+              <span class="card-main-stat"><span data-counter="1450">1,450</span> / 2,000</span>
+              <span class="card-subtext">550 kcal Remaining</span>
+            </div>
+          </div>
+
+          <div class="floating-glass-card" style="bottom: 20%; left: 6%; animation-delay: 1.5s;">
+            <div class="card-icon-bubble card-icon-lime">💪</div>
+            <div class="card-text-group">
+              <span class="card-label">Protein Target</span>
+              <span class="card-main-stat"><span data-counter="95">95</span> / 130g</span>
+              <span class="card-subtext">73% Completed</span>
+            </div>
+          </div>
+
+          <div class="floating-glass-card" style="top: 20%; right: 6%; animation-delay: 2.2s;">
+            <div class="card-icon-bubble card-icon-blue">🌾</div>
+            <div class="card-text-group">
+              <span class="card-label">Carbohydrates</span>
+              <span class="card-main-stat"><span data-counter="165">165</span> / 220g</span>
+              <span class="card-subtext">Energy Reserve Balanced</span>
+            </div>
+          </div>
+
+          <div class="floating-glass-card" style="bottom: 20%; right: 6%; animation-delay: 3s;">
+            <div class="card-icon-bubble card-icon-amber">🥑</div>
+            <div class="card-text-group">
+              <span class="card-label">Healthy Fats</span>
+              <span class="card-main-stat"><span data-counter="48">48</span> / 65g</span>
+              <span class="card-subtext">Hormone Health Optimal</span>
+            </div>
+          </div>
+
+          <!-- Central Dashboard Phone Mockup -->
+          <div class="phone-mockup phone-theme-dark">
+            <div class="phone-notch-bar">
+              <div class="notch-speaker-slot"></div>
+              <div class="notch-camera-lens"></div>
+            </div>
+            <div class="phone-status-bar">
+              <span>9:41</span>
+              <div class="phone-status-icons">5G &bull; 95%</div>
+            </div>
+            <div class="phone-screen">
+              <div class="screen-app-header">
+                <div class="app-brand-badge">
+                  <span>Daily Dashboard</span>
+                </div>
+                <div class="screen-app-avatar">
+                  <img src="/landing-assets/assets/images/avatar.jpg" alt="User">
+                </div>
+              </div>
+
+              <!-- Animated Main Calorie Gauge -->
+              <div class="phone-calorie-card">
+                <svg class="phone-gauge-svg" viewBox="0 0 140 140">
+                  <circle class="gauge-circle-bg" cx="70" cy="70" r="54"></circle>
+                  <circle class="gauge-circle-bar" id="dashboardCalorieArc" cx="70" cy="70" r="54" stroke-dashoffset="339"></circle>
+                </svg>
+                <div class="gauge-content-overlay">
+                  <span class="gauge-overlay-val">1,450</span>
+                  <span class="gauge-overlay-target">of 2,000 kcal</span>
+                  <span style="font-size:0.65rem;color:var(--color-lime);margin-top:2px;">550 kcal left</span>
+                </div>
+              </div>
+
+              <!-- 3 Macro Cards with Rings -->
+              <div class="phone-macros-row">
+                <div class="phone-macro-pill">
+                  <svg class="macro-ring-svg" viewBox="0 0 36 36">
+                    <circle cx="18" cy="18" r="14" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="3"></circle>
+                    <circle cx="18" cy="18" r="14" fill="none" stroke="url(#proteinGradDirect)" stroke-width="3" stroke-dasharray="88" stroke-dashoffset="24" stroke-linecap="round"></circle>
+                  </svg>
+                  <span class="macro-pill-title">Protein</span>
+                  <span class="macro-pill-num text-lime">95g</span>
+                </div>
+
+                <div class="phone-macro-pill">
+                  <svg class="macro-ring-svg" viewBox="0 0 36 36">
+                    <circle cx="18" cy="18" r="14" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="3"></circle>
+                    <circle cx="18" cy="18" r="14" fill="none" stroke="url(#carbsGradDirect)" stroke-width="3" stroke-dasharray="88" stroke-dashoffset="22" stroke-linecap="round"></circle>
+                  </svg>
+                  <span class="macro-pill-title">Carbs</span>
+                  <span class="macro-pill-num" style="color:#38BDF8;">165g</span>
+                </div>
+
+                <div class="phone-macro-pill">
+                  <svg class="macro-ring-svg" viewBox="0 0 36 36">
+                    <circle cx="18" cy="18" r="14" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="3"></circle>
+                    <circle cx="18" cy="18" r="14" fill="none" stroke="url(#fatsGradDirect)" stroke-width="3" stroke-dasharray="88" stroke-dashoffset="32" stroke-linecap="round"></circle>
+                  </svg>
+                  <span class="macro-pill-title">Fats</span>
+                  <span class="macro-pill-num" style="color:#F59E0B;">48g</span>
+                </div>
+              </div>
+
+              <!-- Recent Meal Summary Inside Phone -->
+              <div class="phone-recent-meals-card">
+                <span class="recent-meals-title">Today's Meals</span>
+                <div class="parsed-item-row" style="margin-bottom:4px;">
+                  <span class="item-name-qty">🍳 Breakfast: Oats & Berries</span>
+                  <span class="item-macros-brief">380 kcal</span>
+                </div>
+                <div class="parsed-item-row">
+                  <span class="item-name-qty">🍗 Lunch: Grilled Chicken & Rice</span>
+                  <span class="item-macros-brief">620 kcal</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =========================================================================
+         SECTION 4: CONVERSATIONAL CORRECTIONS (Split-Screen Interactive Demo)
+         ========================================================================= -->
+    <section class="landing-section light-section" id="corrections-section">
+      <div class="ambient-glow glow-mint-md" style="top: 30%; right: 10%;"></div>
+
+      <div class="container">
+        <div class="section-header" style="text-align: center; max-width: 680px; margin: 0 auto 50px;">
+          <div class="section-tag light">
+            <span>🔄</span> SMARTER THAN MANUAL TRACKING
+          </div>
+          <h2 class="section-title text-gradient-emerald">
+            Your AI understands<br>the little changes.
+          </h2>
+          <p class="section-desc" style="margin: 0 auto;">
+            Need to adjust a meal? Just tell Macroly in natural sentences. Your nutrition records recalculate without manual re-entry.
+          </p>
+        </div>
+
+        <div class="split-showcase-grid">
+          <!-- Left: AI Chat Interface Demonstration -->
+          <div class="meal-transition-box">
+            <h3 style="font-family:var(--font-display);font-size:1.15rem;margin-bottom:14px;color:var(--color-deep-forest);">
+              Conversational Editing
+            </h3>
+            <div class="chat-stream-demo" style="padding-bottom:14px;">
+              <div class="chat-bubble chat-bubble-user" style="background:#145638;color:#fff;">
+                I had 2 rotis with paneer curry for dinner.
+                <div class="chat-time">8:10 PM</div>
+              </div>
+              <div class="chat-bubble chat-bubble-ai" style="background:#EFF7ED;color:#071F16;border:1px solid rgba(20,86,56,0.15);">
+                Logged! Dinner registered at 580 kcal (2 Rotis, Paneer Curry).
+                <div class="chat-time">8:10 PM</div>
+              </div>
+              <!-- Correction Prompt Bubble -->
+              <div class="chat-bubble chat-bubble-user" style="background:#145638;color:#fff;border-color:var(--color-lime);">
+                Actually, make that 3 rotis instead of 2.
+                <div class="chat-time">8:12 PM</div>
+              </div>
+              <div class="chat-bubble chat-bubble-ai" id="aiCorrectionBubble" style="background:#EFF7ED;color:#071F16;border:1px solid rgba(20,86,56,0.15);opacity:0.3;transition:opacity 0.4s ease;">
+                Got it! Updated your dinner to <strong>3 rotis</strong>. Totals recalculated to <strong>720 kcal</strong>.
+                <div class="chat-time">8:12 PM</div>
+              </div>
+            </div>
+            <button class="btn btn-outline-emerald" id="triggerCorrectionBtn" style="width:100%;margin-top:10px;">
+              Simulate Correction: "Actually, 3 rotis"
+            </button>
+          </div>
+
+          <!-- Right: Updated Meal Card & Micro Dashboard -->
+          <div class="meal-transition-box" id="correctionHighlightCard">
+            <span class="transition-state-badge state-before" id="correctionBadge">Original Entry</span>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+              <div>
+                <h4 style="font-family:var(--font-display);font-size:1.2rem;color:var(--color-deep-forest);">Dinner Summary</h4>
+                <span style="font-size:0.8rem;color:var(--text-secondary-light);">Synchronized with Macroly Cache</span>
+              </div>
+              <div style="font-family:var(--font-display);font-size:1.6rem;font-weight:800;color:var(--color-emerald);" id="correctionMealCals">
+                580 kcal
+              </div>
+            </div>
+
+            <div class="parsed-items-list" style="margin-bottom:14px;">
+              <div class="parsed-item-row" style="background:#EFF7ED;">
+                <span class="item-name-qty">Whole Wheat Roti</span>
+                <span class="item-macros-brief" id="correctionRotiQty">2 pcs (Whole Wheat)</span>
+              </div>
+              <div class="parsed-item-row" style="background:#EFF7ED;">
+                <span class="item-name-qty">Paneer Butter Masala</span>
+                <span class="item-macros-brief">220g (340 kcal)</span>
+              </div>
+            </div>
+
+            <!-- Macro Stats Row for Correction -->
+            <div style="display:flex;gap:12px;margin-bottom:16px;font-size:0.78rem;">
+              <div style="flex:1;background:#F8FBF8;padding:8px 10px;border-radius:8px;border:1px solid rgba(20,86,56,0.1);">
+                <span style="color:var(--text-secondary-light);font-size:0.7rem;display:block;">Carbs</span>
+                <strong id="correctionCarbStat" style="color:#0284C7;">56g Carbs</strong>
+              </div>
+              <div style="flex:1;background:#F8FBF8;padding:8px 10px;border-radius:8px;border:1px solid rgba(20,86,56,0.1);">
+                <span style="color:var(--text-secondary-light);font-size:0.7rem;display:block;">Protein</span>
+                <strong id="correctionProteinStat" style="color:var(--color-emerald);">23g Protein</strong>
+              </div>
+            </div>
+
+            <div style="padding:14px;background:#F8FBF8;border-radius:12px;border:1px solid rgba(20,86,56,0.08);display:flex;align-items:center;gap:12px;">
+              <div style="width:32px;height:32px;border-radius:50%;background:rgba(20,86,56,0.1);color:var(--color-emerald);display:flex;align-items:center;justify-content:center;font-weight:700;">
+                ✓
+              </div>
+              <div style="font-size:0.82rem;color:var(--text-secondary-light);">
+                Nutritional totals update across your database and daily progress arc in real time.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =========================================================================
+         SECTION 5: YOUR NUTRITION HISTORY & TRENDS
+         ========================================================================= -->
+    <section class="landing-section dark-section" id="history-section">
+      <div class="ambient-glow glow-emerald-lg" style="bottom: 10%; left: 5%;"></div>
+
+      <div class="container">
+        <div class="section-header" style="text-align: center; max-width: 680px; margin: 0 auto 50px;">
+          <div class="section-tag dark">
+            <span>📅</span> YOUR JOURNEY, ORGANIZED
+          </div>
+          <h2 class="section-title">
+            Your progress doesn't<br><span class="text-lime">stop at today.</span>
+          </h2>
+          <p class="section-desc" style="margin: 0 auto;">
+            Review historical meal logs, track 7-day adherence streaks, and uncover your long-term eating habits over time.
+          </p>
+        </div>
+
+        <div class="history-showcase-grid">
+          <!-- Left: 7-Day Consistency Bar Graph -->
+          <div class="streak-trend-box">
+            <div style="display:flex;align-items:center;justify-content:space-between;">
+              <div>
+                <span style="font-size:0.75rem;font-weight:800;color:var(--color-lime);letter-spacing:0.08em;text-transform:uppercase;">
+                  7-Day Adherence
+                </span>
+                <h3 style="font-family:var(--font-display);font-size:1.4rem;color:#FFFFFF;margin-top:4px;">
+                  88% Target Consistency
+                </h3>
+              </div>
+              <span class="brand-badge" style="font-size:0.8rem;padding:6px 12px;">5-Day Streak 🔥</span>
+            </div>
+
+            <!-- Animated Trend Bars -->
+            <div class="trend-bars-row">
+              <div class="trend-bar-col">
+                <div class="trend-bar-fill" style="height: 85%;"></div>
+                <span class="trend-day-label">Mon</span>
+              </div>
+              <div class="trend-bar-col">
+                <div class="trend-bar-fill" style="height: 92%;"></div>
+                <span class="trend-day-label">Tue</span>
+              </div>
+              <div class="trend-bar-col">
+                <div class="trend-bar-fill" style="height: 78%;"></div>
+                <span class="trend-day-label">Wed</span>
+              </div>
+              <div class="trend-bar-col">
+                <div class="trend-bar-fill" style="height: 95%;"></div>
+                <span class="trend-day-label">Thu</span>
+              </div>
+              <div class="trend-bar-col">
+                <div class="trend-bar-fill" style="height: 88%;"></div>
+                <span class="trend-day-label">Fri</span>
+              </div>
+              <div class="trend-bar-col">
+                <div class="trend-bar-fill" style="height: 70%;"></div>
+                <span class="trend-day-label">Sat</span>
+              </div>
+              <div class="trend-bar-col">
+                <div class="trend-bar-fill" style="height: 90%;"></div>
+                <span class="trend-day-label">Sun</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right: History Inspector Cards -->
+          <div style="display:flex;flex-direction:column;gap:16px;">
+            <div class="feature-bento-card" style="padding:22px;">
+              <div style="display:flex;align-items:center;justify-content:space-between;">
+                <span style="font-weight:700;color:var(--color-pure-white);">Yesterday &bull; Oct 29</span>
+                <span style="color:var(--color-lime);font-weight:800;font-size:0.9rem;">2,080 / 2,200 kcal</span>
+              </div>
+              <p style="font-size:0.85rem;color:var(--text-secondary-dark);margin-top:6px;">
+                Hit protein target (138g). Balanced post-workout dinner logged via voice command.
+              </p>
+            </div>
+
+            <div class="feature-bento-card" style="padding:22px;">
+              <div style="display:flex;align-items:center;justify-content:space-between;">
+                <span style="font-weight:700;color:var(--color-pure-white);">Tuesday &bull; Oct 28</span>
+                <span style="color:var(--color-lime);font-weight:800;font-size:0.9rem;">1,950 / 2,200 kcal</span>
+              </div>
+              <p style="font-size:0.85rem;color:var(--text-secondary-dark);margin-top:6px;">
+                Consistent hydration and 45-min gym workout calories deducted automatically.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =========================================================================
+         SECTION 6: MACROLY FEATURE BENTO GRID
+         ========================================================================= -->
+    <section class="landing-section dark-section" id="features-section" style="background:#051710;">
+      <div class="container">
+        <div class="section-header" style="text-align: center; max-width: 680px; margin: 0 auto 50px;">
+          <div class="section-tag dark">
+            <span>⚡</span> BUILT FOR YOUR NUTRITION GOALS
+          </div>
+          <h2 class="section-title">
+            Everything you need.<br><span class="text-lime">Nothing you don't.</span>
+          </h2>
+          <p class="section-desc" style="margin: 0 auto;">
+            Macroly removes the friction of manual fitness tracking through cutting-edge AI language models and clean responsive engineering.
+          </p>
+        </div>
+
+        <div class="features-bento-grid">
+          <!-- Card 1: AI Food Logging (Span 2) -->
+          <div class="feature-bento-card card-span-2">
+            <div class="feature-card-icon">🧠</div>
+            <h3 class="feature-card-title">Natural Conversational Food Logging</h3>
+            <p class="feature-card-desc">
+              Speak or type how you naturally talk. Macroly parses colloquial items, fractional quantities ("half an avocado"), and multi-ingredient recipes effortlessly.
+            </p>
+            <div class="feature-mini-preview">
+              <span class="text-lime font-display">User:</span> "2 scrambled eggs on sourdough with black coffee" &rarr; <span class="text-mint font-display">Auto-parsed in 1.2s</span>
+            </div>
+          </div>
+
+          <!-- Card 2: Smart Meal Categorization -->
+          <div class="feature-bento-card">
+            <div class="feature-card-icon">🏷️</div>
+            <h3 class="feature-card-title">Smart Categorization</h3>
+            <p class="feature-card-desc">
+              Automatic detection of Breakfast, Lunch, Dinner, or Snacks based on your time of day and meal composition.
+            </p>
+          </div>
+
+          <!-- Card 3: Real-Time Macro Tracking -->
+          <div class="feature-bento-card">
+            <div class="feature-card-icon">🎯</div>
+            <h3 class="feature-card-title">Real-Time Macro Telemetry</h3>
+            <p class="feature-card-desc">
+              Accurate breakdown of Protein, Carbohydrates, and Fats with visual progress indicators and calorie target gauges.
+            </p>
+          </div>
+
+          <!-- Card 4: Conversational Corrections (Span 2) -->
+          <div class="feature-bento-card card-span-2">
+            <div class="feature-card-icon">🔄</div>
+            <h3 class="feature-card-title">Conversational Item Swaps & Corrections</h3>
+            <p class="feature-card-desc">
+              Change your mind? Simply state: "Actually, 2 rotis instead of rice" or "Remove the butter". Macroly preserves context and updates your records cleanly.
+            </p>
+          </div>
+
+          <!-- Card 5: Daily Nutrition History -->
+          <div class="feature-bento-card">
+            <div class="feature-card-icon">📈</div>
+            <h3 class="feature-card-title">Adherence & Streaks</h3>
+            <p class="feature-card-desc">
+              Interactive monthly calendar and 7-day consistency graphs so you can measure long-term fitness transformation.
+            </p>
+          </div>
+
+          <!-- Card 6: Personalized Goals & Vitals -->
+          <div class="feature-bento-card">
+            <div class="feature-card-icon">⚙️</div>
+            <h3 class="feature-card-title">Personalized Goals</h3>
+            <p class="feature-card-desc">
+              Tailored target calories, water tracking, and workout expenditure calculation configured to your custom physique goals.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =========================================================================
+         SECTION 7: FINAL CTA & DOWNLOAD
+         ========================================================================= -->
+    <section class="landing-section dark-section" id="download-cta">
+      <div class="container">
+        <div class="final-cta-box">
+          <div class="ambient-glow glow-lime-sm" style="top: -50px; left: 50%; transform: translateX(-50%);"></div>
+
+          <div class="final-cta-content">
+            <div class="section-tag dark" style="margin-bottom: 20px;">
+              <span>🚀</span> GET STARTED TODAY
+            </div>
+
+            <h2 class="final-cta-title">
+              Make every meal count.
+            </h2>
+
+            <p class="final-cta-desc">
+              Start tracking smarter with Macroly. Your nutrition journey is just one natural conversation away.
+            </p>
+
+            <div class="hero-cta-group" style="justify-content: center;">
+              <button class="btn btn-lime btn-try-web">
+                Try Macroly Web
+                <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <line x1="5" y1="12" x2="19" y2="12"></line>
+                  <polyline points="12 5 19 12 12 19"></polyline>
+                </svg>
+              </button>
+              <button class="btn btn-outline-white btn-download-apk">
+                Download Android APK
+                <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="7 10 12 15 17 10"></polyline>
+                  <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- =========================================================================
+       FOOTER
+       ========================================================================= -->
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <div class="nav-brand">
+            <div class="brand-icon-box">
+              <svg width="24" height="24" viewBox="0 0 40 40" fill="none">
+                <rect width="40" height="40" rx="11" fill="#14241B" stroke="rgba(74, 222, 128, 0.35)" stroke-width="1.2" />
+                <path d="M8 29 V19 C8 15 11 12.5 14.5 12.5 C18 12.5 20 15 20 19 V29 M20 19 C20 15 23 12.5 26.5 12.5 C30 12.5 32 15 32 19 V29"
+                      stroke="#4ADE80" stroke-width="4.2" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+            </div>
+            <span class="brand-text">Macroly</span>
+          </div>
+          <p>
+            Conversational AI nutrition companion engineered to make daily calorie and macro tracking effortless and accurate.
+          </p>
+        </div>
+
+        <div class="footer-col">
+          <h4>Product</h4>
+          <ul>
+            <li><a href="#hero">Overview</a></li>
+            <li><a href="#how-it-works">Food Logging</a></li>
+            <li><a href="#dashboard-section">Macro Dashboard</a></li>
+            <li><a href="#features-section">Features</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-col">
+          <h4>Platform</h4>
+          <ul>
+            <li><a href="/" class="btn-try-web">Web Application</a></li>
+            <li><a href="#" class="btn-download-apk">Android App (APK)</a></li>
+            <li><a href="https://github.com/shadmanmd48/Macroly-V1.1" target="_blank" rel="noopener">GitHub Repository</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-col">
+          <h4>Legal & Privacy</h4>
+          <ul>
+            <li><a href="#">Privacy Policy</a></li>
+            <li><a href="#">Terms & Conditions</a></li>
+            <li><a href="mailto:support@macroly.app">Support & Contact</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <div>&copy; 2026 Macroly AI Nutrition Tracker. All rights reserved.</div>
+        <div style="display:flex;gap:20px;">
+          <span>Designed with Deep Forest & Lime Aesthetics</span>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Scripts -->
+  <script src="/landing-assets/js/main.js"></script>
+  <script src="/landing-assets/js/chat-demo.js"></script>
+  <script src="/landing-assets/js/animations.js"></script>
+</body>
+</html>
