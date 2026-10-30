@@ -304,4 +304,15 @@ if os.path.exists(FRONTEND_DIR):
         """Serve the frontend single-page application index."""
         return FileResponse(os.path.join(FRONTEND_DIR, "index.html"))
 
+# Mount landing page files
+LANDING_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "macroly-landing"))
+if os.path.exists(LANDING_DIR):
+    app.mount("/landing-assets", StaticFiles(directory=LANDING_DIR), name="landing-assets")
+    app.mount("/landing-static", StaticFiles(directory=LANDING_DIR, html=True), name="landing-static")
+
+    @app.get("/landing")
+    def serve_landing() -> FileResponse:
+        """Serve the Macroly premium marketing landing page."""
+        return FileResponse(os.path.join(LANDING_DIR, "index.html"))
+
 
