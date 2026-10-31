@@ -189,6 +189,91 @@ img, svg {
   border: 1px solid rgba(20, 86, 56, 0.15);
 }
 
+/* Modern Interactive AI Feature Eyebrow Pill with Warm Ambient Breathing */
+@keyframes barBreathing {
+  0%, 100% {
+    box-shadow: 0 4px 16px rgba(20, 86, 56, 0.08), 0 0 0 0 rgba(74, 222, 128, 0);
+    border-color: rgba(20, 86, 56, 0.18);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 8px 24px rgba(20, 86, 56, 0.15), 0 0 16px 2px rgba(74, 222, 128, 0.28);
+    border-color: rgba(74, 222, 128, 0.55);
+    transform: scale(1.025);
+  }
+}
+
+.modern-feature-pill {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 10px !important;
+  background: rgba(20, 86, 56, 0.08) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border: 1px solid rgba(20, 86, 56, 0.18) !important;
+  border-radius: 999px !important;
+  padding: 5px 16px 5px 6px !important;
+  margin: 0 auto 22px auto !important;
+  transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+  animation: barBreathing 4.5s ease-in-out infinite !important;
+  cursor: pointer !important;
+  user-select: none !important;
+  white-space: nowrap !important;
+}
+
+.modern-feature-pill:hover {
+  animation-play-state: paused !important;
+  transform: translateY(-2px) scale(1.03) !important;
+  background: rgba(20, 86, 56, 0.14) !important;
+  border-color: rgba(74, 222, 128, 0.6) !important;
+  box-shadow: 0 10px 28px rgba(20, 86, 56, 0.18), 0 0 20px 3px rgba(74, 222, 128, 0.32) !important;
+}
+
+.pill-badge-tag {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 7px !important;
+  background: #145638 !important;
+  color: #FFFFFF !important;
+  font-family: var(--font-display) !important;
+  font-size: 0.72rem !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.06em !important;
+  text-transform: uppercase !important;
+  padding: 5px 12px !important;
+  border-radius: 999px !important;
+  box-shadow: 0 2px 8px rgba(20, 86, 56, 0.25) !important;
+}
+
+.pill-badge-sparkle {
+  color: var(--color-lime);
+  font-size: 0.8rem;
+  line-height: 1;
+}
+
+.pill-badge-text {
+  font-family: var(--font-body) !important;
+  font-size: 0.82rem !important;
+  font-weight: 600 !important;
+  color: var(--color-emerald) !important;
+  letter-spacing: 0.01em !important;
+}
+
+.pill-badge-arrow {
+  color: var(--color-emerald) !important;
+  font-size: 1rem !important;
+  font-weight: 700 !important;
+  line-height: 1 !important;
+  opacity: 0.8 !important;
+  transition: transform 0.3s ease, opacity 0.3s ease !important;
+}
+
+.modern-feature-pill:hover .pill-badge-arrow {
+  transform: translateX(4px) !important;
+  opacity: 1 !important;
+}
+
 .section-title {
   font-family: var(--font-display);
   font-size: clamp(2.2rem, 4vw, 3.4rem);
