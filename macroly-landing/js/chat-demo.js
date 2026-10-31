@@ -25,15 +25,53 @@ function initChatDemoSection2() {
   const liveInput = document.getElementById("demoChatInput");
   const liveSendBtn = document.getElementById("demoSendBtn");
   const replayPromptBanner = document.getElementById("demoReplayPrompt");
+  const phoneInteractive = document.getElementById("showcaseInteractivePhone");
 
   if (!chatContainer) return;
 
   let hasRun = false;
   let demoTimeouts = [];
+  let typewriterInterval = null;
+  let isPhoneHovered = false;
+  let isCustomInputFocused = false;
+  let isCycleCompleted = false;
+  let mealCycleIndex = 0;
+
+  // Preset demo meals that cycle continuously
+  const demoMeals = [
+    {
+      userText: "I had 2 boiled eggs, 200g rice and chicken curry.",
+      aiText: "Got it! I've identified your meal and calculated complete macronutrients.",
+      badge: "🍛 Lunch Logged",
+      calories: 685,
+      items: [
+        { name: "🥚 2 Boiled Eggs", macro: "156 kcal • 12g P" },
+        { name: "🍚 200g Cooked Rice", macro: "260 kcal • 56g C" },
+        { name: "🍗 Chicken Curry", macro: "269 kcal • 27g P" }
+      ],
+      confirmText: "Lunch successfully logged to daily dashboard"
+    },
+    {
+      userText: "1 bowl Greek yogurt, fresh blueberries and almond butter.",
+      aiText: "Identified high-protein snack! Parsed 3 ingredients with live macro sync.",
+      badge: "🥣 Snack Logged",
+      calories: 340,
+      items: [
+        { name: "🥣 Greek Yogurt (150g)", macro: "130 kcal • 15g P" },
+        { name: "🫐 Fresh Blueberries", macro: "45 kcal • 10g C" },
+        { name: "🥜 Almond Butter (1 tbsp)", macro: "165 kcal • 7g P" }
+      ],
+      confirmText: "Snack successfully logged to daily dashboard"
+    }
+  ];
 
   function clearAllTimeouts() {
     demoTimeouts.forEach(t => clearTimeout(t));
     demoTimeouts = [];
+    if (typewriterInterval) {
+      clearInterval(typewriterInterval);
+      typewriterInterval = null;
+    }
   }
 
   function queueTimeout(fn, delay) {
@@ -42,139 +80,222 @@ function initChatDemoSection2() {
     return t;
   }
 
-  function runDemo(customText = null) {
+  function fadeAndRestart(customText = null) {
     clearAllTimeouts();
+    if (!customText) {
+      mealCycleIndex = (mealCycleIndex + 1) % demoMeals.length;
+    }
+    
+    // Dim the existing conversation slightly while the new meal types in the input
+    const oldBubbles = chatContainer.querySelectorAll(".dynamic-demo-bubble");
+    if (typeof gsap !== "undefined" && oldBubbles.length > 0) {
+      gsap.to(oldBubbles, { opacity: 0.5, duration: 0.25 });
+      if (parsedCard) gsap.to(parsedCard, { opacity: 0.5, duration: 0.25 });
+    }
 
-    // Reset container to clean state
-    chatContainer.querySelectorAll(".dynamic-demo-bubble").forEach(el => el.remove());
-    if (parsedCard) {
-      parsedCard.style.display = "none";
-      parsedCard.style.opacity = "0";
-      parsedCard.style.transform = "translateY(15px)";
+    runDemo(customText, true /* isTransitioning */);
+  }
+
+  // Fast, Snappy Typewriter simulation (Never blocked by hover or mouse interaction)
+  function simulateTypewriter(text, onComplete) {
+    if (!liveInput) {
+      onComplete();
+      return;
+    }
+
+    liveInput.value = "";
+    liveInput.setAttribute("placeholder", "");
+    let charIdx = 0;
+    const chunkSize = 5; // Fast 5 chars per step: 50+ chars finish typing in ~110ms
+
+    typewriterInterval = setInterval(() => {
+      charIdx += chunkSize;
+      if (charIdx > text.length) charIdx = text.length;
+      liveInput.value = text.slice(0, charIdx);
+
+      if (charIdx >= text.length) {
+        clearInterval(typewriterInterval);
+        typewriterInterval = null;
+
+        // Snappy button press micro-animation (35ms + 50ms = 85ms)
+        queueTimeout(() => {
+          if (liveSendBtn) {
+            liveSendBtn.style.transform = "scale(0.85)";
+            liveSendBtn.style.backgroundColor = "#145638";
+            queueTimeout(() => {
+              liveSendBtn.style.transform = "scale(1)";
+              liveSendBtn.style.backgroundColor = "";
+              liveInput.value = "";
+              liveInput.setAttribute("placeholder", "Describe your meal or snack...");
+              onComplete();
+            }, 50);
+          } else {
+            liveInput.value = "";
+            onComplete();
+          }
+        }, 35);
+      }
+    }, 12);
+  }
+
+  function runDemo(customText = null, isTransitioning = false) {
+    clearAllTimeouts();
+    isCycleCompleted = false;
+
+    // Only clear previous conversation if not smoothly transitioning
+    if (!isTransitioning) {
+      chatContainer.querySelectorAll(".dynamic-demo-bubble").forEach(el => el.remove());
+      if (parsedCard) {
+        parsedCard.style.display = "none";
+        parsedCard.style.opacity = "0";
+      }
     }
     if (typingIndicator) typingIndicator.style.display = "none";
     if (replayPromptBanner) replayPromptBanner.style.display = "none";
 
-    const userMessageText = customText || "I had 2 boiled eggs, 200g rice and chicken curry.";
+    const currentMeal = customText ? {
+      userText: customText,
+      aiText: "Identified your custom meal! Macronutrients calculated automatically.",
+      badge: "🍽️ Meal Logged",
+      calories: 520,
+      items: [
+        { name: customText.slice(0, 26) + (customText.length > 26 ? "..." : ""), macro: "520 kcal • 32g P" }
+      ],
+      confirmText: "Custom meal successfully logged to daily dashboard"
+    } : demoMeals[mealCycleIndex];
 
-    // If input had text, clear it
-    if (liveInput) {
-      liveInput.value = "";
-      liveInput.blur();
-    }
-
-    // Step 1: User Message with typing pop
+    // Step 1: Ultra-fast typing begins immediately (15ms delay)
     queueTimeout(() => {
-      const userBubble = document.createElement("div");
-      userBubble.className = "chat-bubble chat-bubble-user dynamic-demo-bubble";
-      userBubble.innerHTML = `
-        ${userMessageText}
-        <div class="chat-time">${getCurrentTimeString()}</div>
-      `;
-      chatContainer.appendChild(userBubble);
-      chatContainer.scrollTop = chatContainer.scrollHeight;
+      simulateTypewriter(currentMeal.userText, () => {
+        // Clear previous conversation now that the new message is ready to send
+        chatContainer.querySelectorAll(".dynamic-demo-bubble").forEach(el => el.remove());
+        if (parsedCard) {
+          parsedCard.style.display = "none";
+          parsedCard.style.opacity = "0";
+        }
 
-      if (typeof gsap !== "undefined") {
-        gsap.fromTo(userBubble, 
-          { opacity: 0, y: 15, scale: 0.95 }, 
-          { opacity: 1, y: 0, scale: 1, duration: 0.4, ease: "back.out(1.2)" }
-        );
-      }
-    }, 400);
-
-    // Step 2: AI Typing Indicator
-    queueTimeout(() => {
-      if (typingIndicator) {
-        typingIndicator.style.display = "flex";
-        chatContainer.appendChild(typingIndicator);
-        chatContainer.scrollTop = chatContainer.scrollHeight;
-      }
-    }, 1300);
-
-    // Step 3: AI Response Bubble
-    queueTimeout(() => {
-      if (typingIndicator) typingIndicator.style.display = "none";
-
-      const aiBubble = document.createElement("div");
-      aiBubble.className = "chat-bubble chat-bubble-ai dynamic-demo-bubble";
-      aiBubble.innerHTML = `
-        Got it! I've identified your meal and calculated complete macronutrients.
-        <div class="chat-time">${getCurrentTimeString()}</div>
-      `;
-      chatContainer.appendChild(aiBubble);
-      chatContainer.scrollTop = chatContainer.scrollHeight;
-
-      if (typeof gsap !== "undefined") {
-        gsap.fromTo(aiBubble, 
-          { opacity: 0, y: 15, scale: 0.95 }, 
-          { opacity: 1, y: 0, scale: 1, duration: 0.45, ease: "power2.out" }
-        );
-      }
-    }, 2500);
-
-    // Step 4: Three Food Cards & Step 5: Nutrition Summary with Counter Kinetics
-    queueTimeout(() => {
-      if (parsedCard) {
-        parsedCard.style.display = "block";
-        chatContainer.appendChild(parsedCard);
+        // Step 2: User Message Bubble swoops in immediately
+        const userBubble = document.createElement("div");
+        userBubble.className = "chat-bubble chat-bubble-user dynamic-demo-bubble";
+        userBubble.innerHTML = `
+          ${currentMeal.userText}
+          <div class="chat-time">${getCurrentTimeString()}</div>
+        `;
+        chatContainer.appendChild(userBubble);
         chatContainer.scrollTop = chatContainer.scrollHeight;
 
         if (typeof gsap !== "undefined") {
-          gsap.fromTo(parsedCard, 
-            { opacity: 0, y: 20 }, 
-            { opacity: 1, y: 0, duration: 0.6, ease: "power3.out" }
+          gsap.fromTo(userBubble, 
+            { opacity: 0, y: 12, scale: 0.95 }, 
+            { opacity: 1, y: 0, scale: 1, duration: 0.28, ease: "back.out(1.2)" }
           );
+        }
 
-          // Animate individual item rows in stagger
-          const rows = parsedCard.querySelectorAll(".parsed-item-row");
-          gsap.fromTo(rows, 
-            { opacity: 0, x: -15 }, 
-            { opacity: 1, x: 0, duration: 0.4, stagger: 0.12, ease: "power2.out" }
-          );
+        // Step 3: AI Typing Indicator appears quickly (100ms)
+        queueTimeout(() => {
+          if (typingIndicator) {
+            typingIndicator.style.display = "flex";
+            chatContainer.appendChild(typingIndicator);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+          }
+        }, 100);
 
-          // Step 5: Count up total calories in badge
-          const calBadge = parsedCard.querySelector(".parsed-cal-counter");
-          if (calBadge) {
-            gsap.fromTo(calBadge, 
-              { innerText: 0 }, 
-              {
-                innerText: 685, 
-                duration: 1.2, 
-                snap: { innerText: 1 }, 
-                ease: "power2.out",
-                onUpdate: function() {
-                  calBadge.innerText = `${Math.ceil(this.targets()[0].innerText)} kcal`;
-                }
-              }
+        // Step 4: AI Reply Bubble appears (400ms)
+        queueTimeout(() => {
+          if (typingIndicator) typingIndicator.style.display = "none";
+
+          const aiBubble = document.createElement("div");
+          aiBubble.className = "chat-bubble chat-bubble-ai dynamic-demo-bubble";
+          aiBubble.innerHTML = `
+            ${currentMeal.aiText}
+            <div class="chat-time">${getCurrentTimeString()}</div>
+          `;
+          chatContainer.appendChild(aiBubble);
+          chatContainer.scrollTop = chatContainer.scrollHeight;
+
+          if (typeof gsap !== "undefined") {
+            gsap.fromTo(aiBubble, 
+              { opacity: 0, y: 12, scale: 0.95 }, 
+              { opacity: 1, y: 0, scale: 1, duration: 0.3, ease: "power2.out" }
             );
           }
-        }
-      }
-    }, 3400);
+        }, 400);
 
-    // Step 6: Meal Confirmation Card & Success Indicator
-    queueTimeout(() => {
-      const confirmCard = document.createElement("div");
-      confirmCard.className = "chat-confirmation-pill dynamic-demo-bubble";
-      confirmCard.innerHTML = `
-        <span class="confirm-check-disc">✓</span>
-        <span>Lunch successfully logged to daily dashboard</span>
-      `;
-      chatContainer.appendChild(confirmCard);
-      chatContainer.scrollTop = chatContainer.scrollHeight;
+        // Step 5: Parsed Food Card & Calorie Counter (750ms)
+        queueTimeout(() => {
+          const card = document.createElement("div");
+          card.className = "parsed-meal-card dynamic-demo-bubble";
+          card.style.display = "block";
+          card.style.opacity = "1";
+          card.innerHTML = `
+            <div class="parsed-meal-header">
+              <span class="meal-badge">${currentMeal.badge}</span>
+              <span class="parsed-cal-counter" style="font-size:0.8rem;font-weight:800;color:var(--color-emerald);">0 kcal</span>
+            </div>
+            <div class="parsed-items-list">
+              ${currentMeal.items.map(item => `
+                <div class="parsed-item-row">
+                  <span class="item-name-qty">${item.name}</span>
+                  <span class="item-macros-brief">${item.macro}</span>
+                </div>
+              `).join("")}
+            </div>
+          `;
+          chatContainer.appendChild(card);
+          chatContainer.scrollTop = chatContainer.scrollHeight;
 
-      if (typeof gsap !== "undefined") {
-        gsap.fromTo(confirmCard, 
-          { opacity: 0, scale: 0.9, y: 10 }, 
-          { opacity: 1, scale: 1, y: 0, duration: 0.5, ease: "back.out(1.5)" }
-        );
-      }
+          if (typeof gsap !== "undefined") {
+            gsap.fromTo(card, 
+              { opacity: 0, y: 14, scale: 0.98 }, 
+              { opacity: 1, y: 0, scale: 1, duration: 0.35, ease: "power3.out" }
+            );
 
-      // Show small replay control prompt
-      if (replayPromptBanner) {
-        replayPromptBanner.style.display = "flex";
-      }
-    }, 4500);
+            const calBadge = card.querySelector(".parsed-cal-counter");
+            if (calBadge && typeof gsap !== "undefined") {
+              const calObj = { val: 0 };
+              gsap.to(calObj, {
+                val: currentMeal.calories,
+                duration: 0.65,
+                ease: "power2.out",
+                onUpdate: () => {
+                  calBadge.textContent = `${Math.round(calObj.val)} kcal`;
+                }
+              });
+            }
+          }
+        }, 750);
+
+        // Step 6: Confirmation Success Pill (1250ms)
+        queueTimeout(() => {
+          const confirmCard = document.createElement("div");
+          confirmCard.className = "chat-confirmation-pill dynamic-demo-bubble";
+          confirmCard.innerHTML = `
+            <span class="confirm-check-disc">✓</span>
+            <span>${currentMeal.confirmText}</span>
+          `;
+          chatContainer.appendChild(confirmCard);
+          chatContainer.scrollTop = chatContainer.scrollHeight;
+
+          if (typeof gsap !== "undefined") {
+            gsap.fromTo(confirmCard, 
+              { opacity: 0, scale: 0.9, y: 8 }, 
+              { opacity: 1, scale: 1, y: 0, duration: 0.3, ease: "back.out(1.5)" }
+            );
+          }
+
+          if (replayPromptBanner) {
+            replayPromptBanner.style.display = "flex";
+          }
+
+          isCycleCompleted = true;
+        }, 1250);
+
+        // Step 7: Master Loop Delay (Hold full rich state for 5.0s before smoothly cycling)
+        queueTimeout(() => {
+          fadeAndRestart();
+        }, 5800);
+      });
+    }, 15);
   }
 
   // Trigger on scroll via ScrollTrigger or IntersectionObserver
@@ -206,16 +327,17 @@ function initChatDemoSection2() {
   // Interactive Replay Button
   if (replayBtn) {
     replayBtn.addEventListener("click", () => {
-      runDemo();
+      fadeAndRestart();
     });
   }
 
-  // Interactive Live Chat Input Demo
+  // Interactive Live Chat Input Demo (Custom user typing)
   if (liveSendBtn && liveInput) {
     const handleSend = () => {
       const text = liveInput.value.trim();
       if (text) {
-        runDemo(text);
+        liveInput.value = "";
+        fadeAndRestart(text);
       }
     };
 
