@@ -331,7 +331,7 @@
       <div class="ambient-glow glow-mint-md" style="top: 20%; left: 5%;"></div>
 
       <div class="container">
-        <div class="section-header" style="text-align: center; max-width: 680px; margin: 0 auto 50px;">
+        <div class="section-header" style="text-align: center; max-width: 720px; margin: 0 auto 50px;">
           <!-- Modern Interactive AI Feature Pill with Breathing Animation (No Blinking) -->
           <div class="modern-feature-pill" id="sec2FeaturePill">
             <span class="pill-badge-tag">
@@ -341,15 +341,16 @@
             <span class="pill-badge-text">Intelligent Food Logging</span>
             <span class="pill-badge-arrow">&rarr;</span>
           </div>
+
           <h2 class="section-title text-gradient-emerald">
             Stop searching.<br>Start talking.
           </h2>
           <p class="section-desc" style="margin: 0 auto;">
-            Simply describe what you eat. Macroly understands portions, ingredients, and hidden calories automatically.
+            Simply describe what you eat in everyday language. Macroly parses complex ingredients, portions, and hidden calories automatically.
           </p>
         </div>
 
-        <div class="showcase-stage-single">
+        <div class="showcase-stage-single" id="showcaseStageSingle">
           <!-- Floating UI Card Left 1: Identified Meal (High Left, Outer Edge) -->
           <div class="floating-glass-card light showcase-floating-card scatter-card-left-1" id="sec2Card1">
             <div class="card-icon-bubble card-icon-emerald">🥑</div>
@@ -394,77 +395,57 @@
           <div class="showcase-phone-wrapper" id="sec2PhoneWrapper">
             <!-- Central Showcase Phone (Full Screen AMOLED Display with Warm Hover Zoom) -->
             <div class="phone-mockup phone-theme-light showcase-phone-interactive" id="showcaseInteractivePhone">
-            <div class="phone-notch-bar">
-              <div class="notch-speaker-slot"></div>
-              <div class="notch-camera-lens"></div>
-            </div>
-            <div class="phone-status-bar">
-              <span>1:15 PM</span>
-              <div class="phone-status-icons">5G &bull; 92%</div>
-            </div>
-            <div class="phone-screen">
-              <div class="screen-app-header">
-                <div class="app-brand-badge">
-                  <div class="phone-header-logo-box">
-                    <svg width="18" height="18" viewBox="0 0 40 40" fill="none">
-                      <rect width="40" height="40" rx="11" fill="#14241B" />
-                      <path d="M8 29 V19 C8 15 11 12.5 14.5 12.5 C18 12.5 20 15 20 19 V29 M20 19 C20 15 23 12.5 26.5 12.5 C30 12.5 32 15 32 19 V29"
-                            stroke="#4ADE80" stroke-width="4.2" stroke-linecap="round" stroke-linejoin="round" />
+              <div class="phone-notch-bar">
+                <div class="notch-speaker-slot"></div>
+                <div class="notch-camera-lens"></div>
+              </div>
+              <div class="phone-status-bar">
+                <span>1:15 PM</span>
+                <div class="phone-status-icons">5G &bull; 92%</div>
+              </div>
+              <div class="phone-screen">
+                <div class="screen-app-header">
+                  <div class="app-brand-badge">
+                    <div class="phone-header-logo-box">
+                      <svg width="18" height="18" viewBox="0 0 40 40" fill="none">
+                        <rect width="40" height="40" rx="11" fill="#14241B" />
+                        <path d="M8 29 V19 C8 15 11 12.5 14.5 12.5 C18 12.5 20 15 20 19 V29 M20 19 C20 15 23 12.5 26.5 12.5 C30 12.5 32 15 32 19 V29"
+                              stroke="#4ADE80" stroke-width="4.2" stroke-linecap="round" stroke-linejoin="round" />
+                      </svg>
+                    </div>
+                    <span class="phone-header-brand-title">Macroly<span class="phone-header-brand-pill">AI</span></span>
+                  </div>
+                  <button class="btn btn-outline-emerald" id="replayDemoBtn" style="padding:4px 10px;font-size:0.72rem;">Replay</button>
+                </div>
+
+                <!-- Animated Chat Conversation Container -->
+                <div class="chat-stream-demo" id="demoChatStream">
+                  <!-- User message and response will populate dynamically via chat-demo.js -->
+                </div>
+
+                <!-- Typing Indicator Template -->
+                <div class="chat-typing-dots" id="demoTypingIndicator" style="display: none;">
+                  <div class="typing-dot"></div>
+                  <div class="typing-dot"></div>
+                  <div class="typing-dot"></div>
+                </div>
+
+
+                <!-- Replay Prompt Overlay Banner -->
+                <div id="demoReplayPrompt" style="display:none;margin-top:10px;padding:8px 12px;background:rgba(20,86,56,0.08);border-radius:10px;font-size:0.75rem;color:var(--color-emerald);align-items:center;justify-content:space-between;">
+                  <span>✨ Try typing your own meal below!</span>
+                </div>
+
+                <!-- Phone Bottom Input Bar (Interactive) -->
+                <div class="phone-chat-input-bar">
+                  <input type="text" id="demoChatInput" placeholder="Try typing: '1 glass mango smoothie'..." style="flex:1;background:transparent;border:none;outline:none;font-size:0.78rem;font-family:inherit;color:inherit;">
+                  <button class="phone-send-btn" id="demoSendBtn" title="Send message">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                      <line x1="12" y1="19" x2="12" y2="5"></line>
+                      <polyline points="5 12 12 5 19 12"></polyline>
                     </svg>
-                  </div>
-                  <span class="phone-header-brand-title">Macroly<span class="phone-header-brand-pill">AI</span></span>
+                  </button>
                 </div>
-                <button class="btn btn-outline-emerald" id="replayDemoBtn" style="padding:4px 10px;font-size:0.72rem;">Replay</button>
-              </div>
-
-              <!-- Animated Chat Conversation Container -->
-              <div class="chat-stream-demo" id="demoChatStream">
-                <!-- User message and response will populate dynamically via chat-demo.js -->
-              </div>
-
-              <!-- Typing Indicator Template -->
-              <div class="chat-typing-dots" id="demoTypingIndicator" style="display: none;">
-                <div class="typing-dot"></div>
-                <div class="typing-dot"></div>
-                <div class="typing-dot"></div>
-              </div>
-
-              <!-- Parsed Meal Card Template -->
-              <div class="parsed-meal-card" id="demoParsedCard" style="display: none;">
-                <div class="parsed-meal-header">
-                  <span class="meal-badge">🍛 Lunch Logged</span>
-                  <span class="parsed-cal-counter" style="font-size:0.8rem;font-weight:800;color:var(--color-emerald);">685 kcal</span>
-                </div>
-                <div class="parsed-items-list">
-                  <div class="parsed-item-row">
-                    <span class="item-name-qty">🥚 2 Boiled Eggs</span>
-                    <span class="item-macros-brief">156 kcal &bull; 12g P</span>
-                  </div>
-                  <div class="parsed-item-row">
-                    <span class="item-name-qty">🍚 200g Cooked Rice</span>
-                    <span class="item-macros-brief">260 kcal &bull; 56g C</span>
-                  </div>
-                  <div class="parsed-item-row">
-                    <span class="item-name-qty">🍗 Chicken Curry</span>
-                    <span class="item-macros-brief">269 kcal &bull; 27g P</span>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Replay Prompt Overlay Banner -->
-              <div id="demoReplayPrompt" style="display:none;margin-top:10px;padding:8px 12px;background:rgba(20,86,56,0.08);border-radius:10px;font-size:0.75rem;color:var(--color-emerald);align-items:center;justify-content:space-between;">
-                <span>✨ Try typing your own meal below!</span>
-              </div>
-
-              <!-- Phone Bottom Input Bar (Interactive) -->
-              <div class="phone-chat-input-bar">
-                <input type="text" id="demoChatInput" placeholder="Try typing: '1 glass mango smoothie'..." style="flex:1;background:transparent;border:none;outline:none;font-size:0.78rem;font-family:inherit;color:inherit;">
-                <button class="phone-send-btn" id="demoSendBtn" title="Send message">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-                    <line x1="12" y1="19" x2="12" y2="5"></line>
-                    <polyline points="5 12 12 5 19 12"></polyline>
-                  </svg>
-                </button>
               </div>
             </div>
           </div>
