@@ -852,3 +852,26 @@
   font-weight: 800;
   letter-spacing: 0.04em;
 }
+
+/* Full Screen Edge-to-Edge Display for Light Phone */
+.phone-mockup.phone-theme-light {
+  background: #F8FBF8;
+}
+
+.phone-theme-light .phone-status-bar {
+  background: transparent;
+  color: #071F16;
+  padding: 12px 24px 0;
+  position: relative;
+  z-index: 45;
+}
+
+.phone-theme-light .phone-notch-bar {
+  background: #000000;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.phone-theme-light .phone-screen {
+  background: #F8FBF8;
+  padding-top: 4px;
+}
