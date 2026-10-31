@@ -243,21 +243,24 @@ function initScrollTriggerSections() {
     }
   });
 
-  // Section 2: Showcase phone elevates as visitor scrolls into Section 2
-  gsap.fromTo("#how-it-works .phone-mockup", 
-    { y: 80, opacity: 0.8 }, 
-    {
-      y: 0, 
-      opacity: 1, 
-      duration: 1.1, 
-      ease: "power3.out",
-      scrollTrigger: {
-        trigger: "#how-it-works",
-        start: "top 75%",
-        toggleActions: "play none none none"
+  // Section 2: Showcase phone wrapper elevates as visitor scrolls into Section 2
+  const sec2PhoneWrap = document.getElementById("sec2PhoneWrapper");
+  if (sec2PhoneWrap) {
+    gsap.fromTo(sec2PhoneWrap, 
+      { y: 60, opacity: 0.8 }, 
+      {
+        y: 0, 
+        opacity: 1, 
+        duration: 1.0, 
+        ease: "power3.out",
+        scrollTrigger: {
+          trigger: "#how-it-works",
+          start: "top 75%",
+          toggleActions: "play none none none"
+        }
       }
-    }
-  );
+    );
+  }
 
   // Section 3: Macro Dashboard phone and orbiting floating cards
   const dashPhone = document.querySelector("#dashboard-section .phone-mockup");
@@ -413,7 +416,7 @@ function initSectionTransitionsAndPins() {
    5. Floating Badge Kinetics (Subtle Ambient Hover)
    ----------------------------------------------------------------------------- */
 function initFloatingBadgeKinetics() {
-  document.querySelectorAll(".floating-glass-card").forEach((card, index) => {
+  document.querySelectorAll(".floating-glass-card:not(.showcase-floating-card)").forEach((card, index) => {
     // Create random offset for natural organic motion
     const yOffset = index % 2 === 0 ? -12 : 12;
     const duration = 4.5 + (index * 0.7);
