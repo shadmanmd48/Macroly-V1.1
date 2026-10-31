@@ -275,6 +275,26 @@
     grid-template-columns: 1fr;
   }
 
+  /* Section 2 Showcase Tablet Adjustments */
+  .showcase-stage-single {
+    min-height: 640px;
+    padding: 20px 0;
+  }
+
+  .showcase-floating-card {
+    width: 200px;
+    padding: 10px 14px;
+  }
+
+  .showcase-floating-card .card-main-stat {
+    font-size: 1rem;
+  }
+
+  .scatter-card-left-1 { left: 0%; top: 5%; }
+  .scatter-card-left-2 { left: 2%; bottom: 8%; }
+  .scatter-card-right-1 { right: 2%; top: 5%; }
+  .scatter-card-right-2 { right: 0%; bottom: 8%; }
+
   .history-showcase-grid {
     grid-template-columns: 1fr;
   }
