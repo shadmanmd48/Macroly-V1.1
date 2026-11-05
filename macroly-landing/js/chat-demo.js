@@ -431,7 +431,7 @@ function initCorrectionDemoSection4() {
 
       if (rotiQtyElem) {
         rotiQtyElem.textContent = "2 pcs (Whole Wheat)";
-        rotiQtyElem.style.color = "inherit";
+        rotiQtyElem.style.color = "var(--color-emerald)";
       }
 
       if (mealCalsElem && typeof gsap !== "undefined") {
