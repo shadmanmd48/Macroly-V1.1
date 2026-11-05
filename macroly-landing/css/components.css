@@ -348,9 +348,11 @@
   border-radius: 8px;
 }
 
-.phone-theme-light .parsed-item-row {
-  background: #F4FAF5;
-  border: 1px solid rgba(20, 86, 56, 0.06);
+.phone-theme-light .parsed-item-row,
+.meal-transition-box .parsed-item-row,
+.light-section .parsed-item-row {
+  background: #EFF7ED;
+  border: 1px solid rgba(20, 86, 56, 0.08);
 }
 
 .item-name-qty {
@@ -361,7 +363,9 @@
   color: #FFFFFF;
 }
 
-.phone-theme-light .item-name-qty {
+.phone-theme-light .item-name-qty,
+.meal-transition-box .item-name-qty,
+.light-section .item-name-qty {
   color: #071F16;
 }
 
@@ -371,7 +375,9 @@
   font-weight: 700;
 }
 
-.phone-theme-light .item-macros-brief {
+.phone-theme-light .item-macros-brief,
+.meal-transition-box .item-macros-brief,
+.light-section .item-macros-brief {
   color: var(--color-emerald);
 }
 
