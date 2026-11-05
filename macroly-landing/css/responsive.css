@@ -157,31 +157,69 @@
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
-  height: 140px;
-  padding-top: 20px;
-  margin-top: 20px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  height: 175px;
+  padding-top: 14px;
+  margin-top: 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  gap: 8px;
 }
 
 .trend-bar-col {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
+  justify-content: flex-end;
+  height: 100%;
+  gap: 6px;
   flex: 1;
 }
 
-.trend-bar-fill {
-  width: 24px;
+.trend-bar-val {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--color-lime);
+  opacity: 0.85;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.trend-bar-col:hover .trend-bar-val {
+  opacity: 1;
+  transform: translateY(-2px);
+}
+
+.trend-bar-track {
+  width: 100%;
+  max-width: 32px;
+  height: 110px;
+  background: rgba(255, 255, 255, 0.05);
   border-radius: 6px 6px 0 0;
-  background: linear-gradient(180deg, var(--color-lime), var(--color-emerald));
-  transition: height 1s ease;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.trend-bar-fill {
+  width: 100%;
+  border-radius: 5px 5px 0 0;
+  background: linear-gradient(180deg, #C5F467 0%, #10B981 100%);
+  box-shadow: 0 0 12px rgba(197, 244, 103, 0.35);
+  transition: height 1s cubic-bezier(0.16, 1, 0.3, 1), transform 0.2s ease;
+  transform-origin: bottom center;
+}
+
+.trend-bar-col:hover .trend-bar-fill {
+  filter: brightness(1.18);
+  box-shadow: 0 0 18px rgba(197, 244, 103, 0.6);
 }
 
 .trend-day-label {
   font-size: 0.72rem;
   color: var(--text-muted-dark);
   font-weight: 600;
+  margin-top: 2px;
 }
 
 /* Section 7 Final CTA */

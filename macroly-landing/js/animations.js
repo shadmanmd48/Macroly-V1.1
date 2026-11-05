@@ -321,17 +321,26 @@ function initScrollTriggerSections() {
     );
   }
 
-  // Section 5: History Trend Bars grow upward
+  // Section 5: History Trend Bars grow upward & Adherence Progress Bar
   const trendBars = document.querySelectorAll(".trend-bar-fill");
-  if (trendBars.length > 0) {
+  const adherenceProgressFill = document.querySelector(".adherence-progress-fill");
+  if (trendBars.length > 0 || adherenceProgressFill) {
     ScrollTrigger.create({
       trigger: "#history-section",
       start: "top 72%",
       onEnter: () => {
-        gsap.fromTo(trendBars, 
-          { scaleY: 0, transformOrigin: "bottom center" }, 
-          { scaleY: 1, duration: 1.2, stagger: 0.1, ease: "power2.out" }
-        );
+        if (adherenceProgressFill) {
+          gsap.fromTo(adherenceProgressFill,
+            { width: "0%" },
+            { width: "88%", duration: 1.2, ease: "power2.out" }
+          );
+        }
+        if (trendBars.length > 0) {
+          gsap.fromTo(trendBars, 
+            { scaleY: 0, transformOrigin: "bottom center" }, 
+            { scaleY: 1, duration: 1.2, stagger: 0.1, ease: "power2.out" }
+          );
+        }
       }
     });
   }
