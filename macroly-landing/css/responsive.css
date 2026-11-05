@@ -145,11 +145,12 @@
 }
 
 .streak-trend-box {
-  background: rgba(11, 43, 30, 0.6);
+  background: rgba(11, 43, 30, 0.7);
   border: 1px solid rgba(197, 244, 103, 0.2);
   border-radius: var(--radius-lg);
   padding: 30px;
   backdrop-filter: blur(12px);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
 }
 
 .trend-bars-row {
